@@ -178,3 +178,8 @@ class YouGuessedRightIntent(Intent):
             return True
 
         return False
+
+
+class WhatCanYouDoIntent(Intent):
+    def match(self, command: str) -> bool:
+        return "что ты умеешь" in command

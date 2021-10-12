@@ -63,12 +63,12 @@ class AnyIntent(Intent):
 
 
 class Topic(ABC):
-    Flow = Generator[Union[Reply, Intent], Any, Any]
+    Flow = Generator[Union[Reply, Intent, 'Topic'], Any, Any]
 
     _flow: Optional[Flow]
     _intent: Intent
     _help: List[HelpReply]
-
+    _subtopics: List['Topic']
 
     def __init__(self) -> None:
         super().__init__()
@@ -76,13 +76,18 @@ class Topic(ABC):
         self._intent = AnyIntent()
         self._flow = None
         self._help = []
-
+        self._subtopics = []
 
     @abstractmethod
     def flow() -> Flow: pass
 
-
     def continue_(self, command: str, reply: ReplyBuilder) -> bool:
+        for st in self._subtopics:
+            is_matched = st.continue_(command, reply)
+
+            if is_matched:
+                return True
+
         is_matched = self._intent.match(command)
 
         if not is_matched:
@@ -106,10 +111,17 @@ class Topic(ABC):
             elif isinstance(action, Reply):
                 action.append_to(reply)
 
+            elif isinstance(action, Topic):
+                action.continue_(command, reply)
+
+                self._subtopics.append(action)
+
             elif isinstance(action, Intent):
                 self._intent = action
 
-                return True
+                break
+
+        return True
 
     def append_help(self, reply: ReplyBuilder) -> None:
         for h in self._help:
@@ -129,50 +141,3 @@ class Dialog:
 
         if not handled:
             self._current_topic.append_help(reply)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# IntentTrigger = Callable[[str], Optional[Any]]
-
-
-# @dataclass
-# class ReplyButton:
-#     title: str
-
-
-# @dataclass
-# class Reply:
-#     display: List[str] = field(default_factory=list)
-#     voice: List[str] = field(default_factory=list)
-#     buttons: List[ReplyButton] = field(default_factory=list)
-
-
-#     def __add__(self, right: 'Reply'):
-#         return Reply(
-#             self.display + right.display,
-#             self.voice + right.voice,
-#             self.buttons + right.buttons,
-#         )
-
-
-# @dataclass
-# class TopicFlowStage:
-#     reply_builder: 'ReplyBuilder'
-#     trigger: IntentTrigger
-#     new_topics: List['Topic'] = field(default_factory=list)

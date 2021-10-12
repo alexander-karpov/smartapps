@@ -1,5 +1,5 @@
 import random
-from intents import EatableRiddleIntent, AgreeIntent, EatableGuessIntent ,YouGuessedRightIntent
+from intents import EatableRiddleIntent, AgreeIntent, EatableGuessIntent, WhatCanYouDoIntent, YouGuessedRightIntent
 from loggers import RiddleLogger
 from dialog import HelpReply, TextReply, Topic
 from generators import ShuffledSequence
@@ -40,10 +40,11 @@ class EatableTopic(Topic, EatableClassifierService, EatableRiddleService):
 
         self._riddle_logger = riddle_logger
 
-
     def flow(self) -> Topic.Flow:
         user_right_eatable_text = ShuffledSequence(USER_RIGHT_EATABLE_TEXT)
         user_right_uneatable_text = ShuffledSequence(USER_RIGHT_UNEATABLE_TEXT)
+
+        yield WhatCanYouDoTopic()
 
         yield TextReply(
             "Хорошо. Давай поиграем.",
@@ -145,3 +146,15 @@ class EatableTopic(Topic, EatableClassifierService, EatableRiddleService):
             )
 
             yield TextReply("Моя очередь.")
+
+
+class WhatCanYouDoTopic(Topic):
+    def flow(self) -> Topic.Flow:
+        yield WhatCanYouDoIntent()
+
+        yield TextReply(
+            "Я люблю играть в «Съедобное, несъедобное». Давай поиграем вместе.",
+            "Отгадай мои загадки, съедобное или несъедобное, и загадай свои.",
+            "Если запутаешься, попроси меня помочь Я всегда подскажу, что нужно делать дальше",
+            "Теперь давай играть.",
+        )
