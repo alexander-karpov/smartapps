@@ -86,6 +86,8 @@ class Topic(ABC):
             is_matched = st.continue_(command, reply)
 
             if is_matched:
+                self.append_help(reply)
+
                 return True
 
         is_matched = self._intent.match(command)

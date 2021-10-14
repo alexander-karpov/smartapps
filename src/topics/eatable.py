@@ -150,11 +150,12 @@ class EatableTopic(Topic, EatableClassifierService, EatableRiddleService):
 
 class WhatCanYouDoTopic(Topic):
     def flow(self) -> Topic.Flow:
-        yield WhatCanYouDoIntent()
+        while True:
+            yield WhatCanYouDoIntent()
 
-        yield TextReply(
-            "Я люблю играть в «Съедобное, несъедобное». Давай поиграем вместе.",
-            "Отгадай мои загадки, съедобное или несъедобное, и загадай свои.",
-            "Если запутаешься, попроси меня помочь Я всегда подскажу, что нужно делать дальше",
-            "Теперь давай играть.",
-        )
+            yield TextReply(
+                "Я умею играть в «Съедобное, несъедобное».",
+                "Отгадай мои загадки и загадай свои.",
+                "Если запутаешься, попроси меня помочь.",
+                "А теперь давай играть.",
+            )
