@@ -31,7 +31,7 @@ command_logger: CommandLogger = MognoCommandLogger(db, 'eat_log') if 'PRODUCTION
 guess_logger: RiddleLogger = MongoRiddleLogger(db, 'eat_guess') if 'PRODUCTION' in os.environ else StdoutRiddleLogger()
 
 class SessionsManager:
-    _sessions: OrderedDict[str, Dialog]
+    _sessions: OrderedDict
     _max_size: int
 
 

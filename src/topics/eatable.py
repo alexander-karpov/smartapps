@@ -79,10 +79,11 @@ class EatableTopic(Topic, EatableClassifierService, EatableRiddleService):
                 f"Угадай - - {bot_riddle} - - это съедобное?",
             ))
 
-            yield HelpReply((
-                f"Вот моя загадка: {bot_riddle} – это съедобное?",
-                f"Вот моя загадка - - {bot_riddle} - - это съедобное?",
-            ))
+            yield HelpReply(
+                f"В этой игре мы играем поочереди.",
+                f"Сейчас моя очередь загадывать, а твоя – отгадывать.",
+                (f"Вот моя загадка: {bot_riddle} – это съедобное?", f"Вот моя загадка - - {bot_riddle} - - это съедобное?")
+            )
 
             user_guess: EatableGuessIntent = yield EatableGuessIntent()
 
@@ -115,6 +116,7 @@ class EatableTopic(Topic, EatableClassifierService, EatableRiddleService):
 
             yield TextReply("Теперь твоя очередь. Скажи свою загадку.")
             yield HelpReply(
+                f"В этой игре мы играем поочереди.",
                 "Сейчас твоя очередь загадывать.",
                 "Придумай какой-нибудь предмет или еду.",
                 "Попробуй обхитрить меня.",
@@ -129,7 +131,12 @@ class EatableTopic(Topic, EatableClassifierService, EatableRiddleService):
             else:
                 yield TextReply("Такое есть нельзя. Несъедобное! Правильно я говорю?")
 
-            yield HelpReply("Скажи, я отгадал твою загадку?")
+            yield HelpReply(
+                (f"Твоя загадка была: «{user_riddle.riddle}».", f"Твоя загадка была - - {user_riddle.riddle}."),
+                "Я думаю, что это",
+                "можно есть. Это съедобное!" if bot_guess else "нельзя есть. Несъедобное!",
+                "Скажи, я отгадала твою загадку?"
+            )
 
             bot_guessed_right: YouGuessedRightIntent = yield YouGuessedRightIntent()
 
