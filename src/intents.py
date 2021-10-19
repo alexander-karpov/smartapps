@@ -179,6 +179,9 @@ class YouGuessedRightIntent(Intent):
 
         return False
 
+    def __bool__(self) -> bool:
+        return self.right
+
 
 class WhatCanYouDoIntent(Intent):
     def match(self, command: str) -> bool:
