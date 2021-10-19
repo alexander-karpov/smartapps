@@ -75,6 +75,17 @@ def main():
     session_id: str = req['session']["session_id"]
     command: str = req["request"]["command"]
 
+    if 'ping' in command:
+        return json.dumps({
+            "version": req['version'],
+            "session": req['session'],
+            "response": {
+                "text": "pong",
+                "tts": "pong",
+                "end_session": True
+            }
+        }, ensure_ascii=False)
+
     if session_id not in sessions:
         sessions[session_id] = _get_dialog()
 
