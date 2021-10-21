@@ -62,6 +62,7 @@ class TestYouGuessedRightIntent:
     def test_positive(self, intent: YouGuessedRightIntent, command: str):
         assert intent.match(command)
         assert intent.right
+        assert not intent.wrong
 
     @pytest.mark.parametrize("command", [
         "нет",
@@ -72,6 +73,7 @@ class TestYouGuessedRightIntent:
     ])
     def test_negative(self, intent: YouGuessedRightIntent, command: str):
         assert intent.match(command)
+        assert intent.wrong
         assert not intent.right
 
     @pytest.mark.parametrize("command", [
@@ -81,17 +83,15 @@ class TestYouGuessedRightIntent:
         "меня зовут саша мне пять лет",
     ])
     def test_unrecognized(self, intent: YouGuessedRightIntent, command: str):
-        assert not intent.match(command)
+        assert intent.match(command)
+        assert not intent.right
+        assert not intent.wrong
 
-    def test_cast_to_true(self, intent: YouGuessedRightIntent):
+    def test_cast_to_bool(self, intent: YouGuessedRightIntent):
         intent.match('да')
 
-        assert intent
-
-    def test_cast_to_false(self, intent: YouGuessedRightIntent):
-        intent.match('нет')
-
-        assert not intent
+        with pytest.raises(NotImplementedError):
+            bool(intent)
 
 
 class TestEatableRiddleIntent:

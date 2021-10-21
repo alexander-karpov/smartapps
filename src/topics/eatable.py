@@ -140,15 +140,17 @@ class EatableTopic(Topic, EatableClassifierService, EatableRiddleService):
 
             bot_guessed_right: YouGuessedRightIntent = yield YouGuessedRightIntent()
 
-            if bot_guessed_right:
+            if bot_guessed_right.right:
                 yield TextReply("Это замечательно. Очень хорошо.")
-            else:
+            elif bot_guessed_right.wrong:
                 yield TextReply("Ну ничего. В следующий раз угадаю.")
+            else:
+                yield TextReply("Продолжаем игру.")
 
             self._riddle_logger.log(
                 riddle=user_riddle.riddle,
                 guess=bot_guess,
-                answer=bot_guess if bot_guessed_right else not bot_guess,
+                answer=bot_guess if bot_guessed_right.right else not bot_guess,
                 is_user=True
             )
 

@@ -24,7 +24,7 @@ class NounIntent(Intent):
             return False
 
 
-class EatableRiddleIntent:
+class EatableRiddleIntent(Intent):
     riddle: str
 
     def match(self, command: str) -> bool:
@@ -186,19 +186,19 @@ not_right_parser = Parser(or_(NOT_RIGHT, NO, NOU, WRONG))
 
 class YouGuessedRightIntent(Intent):
     right: bool = False
+    wrong: bool = False
 
     def match(self, command: str) -> bool:
         if not_right_parser.find(command):
-            return True
+            self.wrong = True
 
-        if right_parser.find(command):
+        elif right_parser.find(command):
             self.right = True
-            return True
 
-        return False
+        return True
 
     def __bool__(self) -> bool:
-        return self.right
+        raise NotImplementedError()
 
 
 class WhatCanYouDoIntent(Intent):
