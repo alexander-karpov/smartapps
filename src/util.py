@@ -10,9 +10,18 @@ def cut_morph(command: str, words: Sequence[str]) -> str:
     pattern = rule(morph_pipeline(words))
     parser = Parser(pattern)
 
-    match = parser.find(command) # type: ignore
+    result = []
+    start = 0
 
-    if match is None:
-        return command
+    for m in parser.findall(command):
+        part = command[start:m.span.start]
 
-    return command[:match.span.start] + command[match.span.stop:] # type: ignore
+        if part:
+            result.append(part.strip())
+
+        start = m.span.stop + 1
+
+    if start < len(command):
+        result.append(command[start:])
+
+    return " ".join(result)

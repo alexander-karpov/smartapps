@@ -62,7 +62,7 @@ class EatableTopic(Topic, EatableClassifierService, EatableRiddleService):
 
         i_can:AgreeIntent = yield AgreeIntent()
 
-        if i_can.yes:
+        if i_can:
             yield TextReply("Тогда давай играть. Я начинаю.")
         else:
             yield TextReply(
@@ -80,7 +80,7 @@ class EatableTopic(Topic, EatableClassifierService, EatableRiddleService):
             ))
 
             yield HelpReply(
-                f"В этой игре мы играем поочереди.",
+                f"Мы играем поочереди.",
                 f"Сейчас моя очередь загадывать, а твоя – отгадывать.",
                 (f"Вот моя загадка: {bot_riddle} – это съедобное?", f"Вот моя загадка - - {bot_riddle} - - это съедобное?")
             )
@@ -116,7 +116,7 @@ class EatableTopic(Topic, EatableClassifierService, EatableRiddleService):
 
             yield TextReply("Теперь твоя очередь. Скажи свою загадку.")
             yield HelpReply(
-                f"В этой игре мы играем поочереди.",
+                f"Мы играем поочереди.",
                 "Сейчас твоя очередь загадывать.",
                 "Придумай какой-нибудь предмет или еду.",
                 "Попробуй обхитрить меня.",

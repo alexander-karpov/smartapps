@@ -24,13 +24,27 @@ class NounIntent(Intent):
             return False
 
 
-class EatableRiddleIntent(NounIntent):
+class EatableRiddleIntent:
     riddle: str
 
     def match(self, command: str) -> bool:
-        self.riddle = cut_morph(command, ['съедобное', 'вкусно'])
+        if not NounIntent().match(command):
+            return False
 
-        return super().match(self.riddle)
+        self.riddle = cut_morph(command, [
+            "это",
+            "или",
+            "алиса",
+            'вкусное',
+            'невкусное',
+            'не вкусное',
+            "можно есть",
+            'съедобное',
+            'несъедобное',
+            'не съедобное',
+        ])
+
+        return True
 
 
 class IKnow(Intent):
@@ -76,6 +90,9 @@ class AgreeIntent(Intent):
             return True
 
         return False
+
+    def __bool__(self) -> bool:
+        return self.yes
 
 
 class EatableGuessIntent(Intent):
@@ -157,13 +174,14 @@ class EatableGuessIntent(Intent):
 
 YES = rule(eq("да"))
 NO = rule(eq("нет"))
-RIGHT = morph_pipeline(["правильно", "угадал", "верно", "точно", "выиграл"])
+NOU = rule(eq("неа"))
+RIGHT = morph_pipeline(["правильно", "угадал", "отгадал", "верно", "точно", "выиграл"])
 NOT_RIGHT = rule(or_(eq("не")), RIGHT)
 WRONG = morph_pipeline(["неправильно", "неверно", "ошибся", "проиграл"])
 
 
 right_parser = Parser(or_(RIGHT, YES))
-not_right_parser = Parser(or_(NOT_RIGHT, NO, WRONG))
+not_right_parser = Parser(or_(NOT_RIGHT, NO, NOU, WRONG))
 
 
 class YouGuessedRightIntent(Intent):

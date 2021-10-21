@@ -1,5 +1,5 @@
 import pytest
-from intents import AgreeIntent, YouGuessedRightIntent
+from intents import AgreeIntent, EatableRiddleIntent, YouGuessedRightIntent
 
 
 class TestAgreeIntent:
@@ -36,6 +36,16 @@ class TestAgreeIntent:
     def test_unrecognized(self, intent: AgreeIntent, command: str):
         assert not intent.match(command)
 
+    def test_cast_to_true(self, intent: AgreeIntent):
+        intent.match('да')
+
+        assert intent
+
+    def test_cast_to_false(self, intent: AgreeIntent):
+        intent.match('нет')
+
+        assert not intent
+
 
 class TestYouGuessedRightIntent:
     @pytest.fixture(scope='function')
@@ -46,6 +56,7 @@ class TestYouGuessedRightIntent:
         "да",
         "верно",
         "угадал",
+        "отгадала",
         "правильно",
     ])
     def test_positive(self, intent: YouGuessedRightIntent, command: str):
@@ -54,6 +65,7 @@ class TestYouGuessedRightIntent:
 
     @pytest.mark.parametrize("command", [
         "нет",
+        "неа",
         "не верно",
         "не угадал",
         "неправильно",
@@ -80,3 +92,20 @@ class TestYouGuessedRightIntent:
         intent.match('нет')
 
         assert not intent
+
+
+class TestEatableRiddleIntent:
+    @pytest.fixture(scope='function')
+    def intent(self):
+        yield EatableRiddleIntent()
+
+    @pytest.mark.parametrize("cases", [
+        ("банан это съедобно", "банан"),
+        ("шампунь для волос это вкусно или не вкусно", "шампунь для волос"),
+        ("зубную щетку можно есть", "зубную щетку"),
+        ("зубная паста это съедобное или несъедобное", "зубная паста"),
+        ("алиса сок это съедобное", "сок"),
+    ])
+    def test_positive(self, intent: EatableRiddleIntent, cases: str):
+        assert intent.match(cases[0])
+        assert intent.riddle == cases[1]
