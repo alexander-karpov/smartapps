@@ -1,5 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Any, List, Tuple, Union,  Generator, Optional
+from typing import Any, Dict, List, Tuple, TypeVar, Union,  Generator, Optional
+from generators import ShuffledSequence
+
+TTopicChoice = TypeVar('TTopicChoice')
 
 
 class ReplyBuilder:
@@ -69,6 +72,7 @@ class Topic(ABC):
     _intent: Intent
     _help: List[HelpReply]
     _subtopics: List['Topic']
+    _choice_seqs: Dict[Tuple[Any, ...], ShuffledSequence]
 
     def __init__(self) -> None:
         super().__init__()
@@ -77,6 +81,7 @@ class Topic(ABC):
         self._flow = None
         self._help = []
         self._subtopics = []
+        self._choice_seqs = {}
 
     @abstractmethod
     def flow() -> Flow: pass
@@ -128,6 +133,16 @@ class Topic(ABC):
     def append_help(self, reply: ReplyBuilder) -> None:
         for h in self._help:
             h.append_to(reply)
+
+    def choice(self, cases: Tuple[TTopicChoice, ...]) -> TTopicChoice:
+        if cases in self._choice_seqs:
+            return next(self._choice_seqs[cases])
+
+        seq = ShuffledSequence(cases)
+        self._choice_seqs[cases] = seq
+
+        return next(seq)
+
 
 
 class Dialog:

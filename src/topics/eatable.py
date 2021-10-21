@@ -1,4 +1,3 @@
-import random
 from intents import EatableRiddleIntent, AgreeIntent, EatableGuessIntent, WhatCanYouDoIntent, YouGuessedRightIntent
 from loggers import RiddleLogger
 from dialog import HelpReply, TextReply, Topic
@@ -71,7 +70,7 @@ class EatableTopic(Topic, EatableClassifierService, EatableRiddleService):
             )
 
         while True:
-            is_bot_riddle_eatable = random.choice([True, False])
+            is_bot_riddle_eatable = self.choice((True, False))
             bot_riddle = self.get_eatable_riddle() if is_bot_riddle_eatable else self.get_uneatable_riddle()
 
             yield TextReply((
@@ -81,7 +80,7 @@ class EatableTopic(Topic, EatableClassifierService, EatableRiddleService):
 
             yield HelpReply(
                 f"Мы играем поочереди.",
-                f"Сейчас моя очередь загадывать, а твоя – отгадывать.",
+                f"Сейчас я загадываю, а ты отгадываешь.",
                 (f"Вот моя загадка: {bot_riddle} – это съедобное?", f"Вот моя загадка - - {bot_riddle} - - это съедобное?")
             )
 
@@ -92,14 +91,14 @@ class EatableTopic(Topic, EatableClassifierService, EatableRiddleService):
                     yield TextReply(next(user_right_eatable_text))
                     yield TextReply("Это съедобное.")
                 else:
-                    yield TextReply("Разме можно такое есть? Нет. Это несъедобное.")
+                    yield TextReply("Разве можно такое есть? Нет. Это несъедобное.")
 
             elif user_guess.is_uneatable:
                 if is_bot_riddle_eatable:
                     yield TextReply("Не угадал. Это съедобное.")
                 else:
                     yield TextReply(next(user_right_uneatable_text))
-                    yield TextReply(" Это несъедобное.")
+                    yield TextReply("Это несъедобное.")
 
             elif user_guess.dont_know:
                 if is_bot_riddle_eatable:
@@ -116,14 +115,13 @@ class EatableTopic(Topic, EatableClassifierService, EatableRiddleService):
 
             yield TextReply("Теперь твоя очередь. Скажи свою загадку.")
             yield HelpReply(
-                f"Мы играем поочереди.",
                 "Сейчас твоя очередь загадывать.",
                 "Придумай какой-нибудь предмет или еду.",
                 "Попробуй обхитрить меня.",
                 "Скажи свою загадку.",
             )
 
-            user_riddle:EatableRiddleIntent = yield EatableRiddleIntent()
+            user_riddle: EatableRiddleIntent = yield EatableRiddleIntent()
             bot_guess = self.is_eatable(user_riddle.riddle)
 
             if bot_guess:
@@ -141,11 +139,27 @@ class EatableTopic(Topic, EatableClassifierService, EatableRiddleService):
             bot_guessed_right: YouGuessedRightIntent = yield YouGuessedRightIntent()
 
             if bot_guessed_right.right:
-                yield TextReply("Это замечательно. Очень хорошо.")
+                yield TextReply(self.choice((
+                    "Это замечательно. Очень хорошо.",
+                    "Я хорошо играю.",
+                    "Ура! Это моя любимая игра.",
+                    "Я справилась.",
+                    "Я очень умная.",
+                )))
+
             elif bot_guessed_right.wrong:
-                yield TextReply("Ну ничего. В следующий раз угадаю.")
+                yield TextReply(self.choice((
+                    "Ну ничего. В следующий раз угадаю.",
+                    "Ты молодец. Хитрая загадка.",
+                    "Меня трудно обыграть, но у тебя получилось.",
+                    "Это была хорошая загадка.",
+                    "Не повезло мне.",
+                )))
             else:
-                yield TextReply("Продолжаем игру.")
+                yield TextReply(self.choice((
+                    "Вот оно что! Ладно.",
+                    "Хорошо играем. Давай ещё раз.",
+                )))
 
             self._riddle_logger.log(
                 riddle=user_riddle.riddle,
@@ -154,7 +168,10 @@ class EatableTopic(Topic, EatableClassifierService, EatableRiddleService):
                 is_user=True
             )
 
-            yield TextReply("Моя очередь.")
+            yield TextReply(self.choice((
+                "Моя очередь.",
+                "Теперь я загадываю.",
+            )))
 
 
 class WhatCanYouDoTopic(Topic):
