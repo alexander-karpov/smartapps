@@ -68,10 +68,24 @@ class AgreeIntent(Intent):
     yes: bool = False
 
     def match(self, command: str) -> bool:
-        if IKnow().match(command):
-            return True
+        CAN = morph_pipeline([
+            "да",
+            "буду",
+            "знаю",
+            "умею",
+            "могу",
+            "хочу",
+            "играл",
+            "готов",
+            "хорошо",
+            "понимаю",
+            "конечно",
+            "согласен",
+            "попробую",
+            "справлюсь",
+            "лучше тебя",
+        ])
 
-        CAN = morph_pipeline(["да", "согласен", "буду", "умею", "понимаю", "могу", "играл", "готов", "конечно", "хочу", "справлюсь", "попробую", "хорошо"])
         NO = rule(eq("нет"))
 
         CANNOT = rule(

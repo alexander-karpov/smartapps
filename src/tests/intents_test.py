@@ -8,10 +8,13 @@ class TestAgreeIntent:
         yield AgreeIntent()
 
     @pytest.mark.parametrize("command", [
-        "буду",
         "да",
+        "буду",
+        "я умею",
         "хорошо",
         "я на всё согласен",
+        "да я лучше тебя знаю",
+        "конечно умею а как тут не уметь",
     ])
     def test_positive(self, intent: AgreeIntent, command: str):
         assert intent.match(command)
