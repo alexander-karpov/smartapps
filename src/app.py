@@ -66,6 +66,11 @@ def _get_dialog() -> Dialog:
     ))
 
 
+@app.route("/", methods=['GET']) # type:ignore
+def greating():
+    return "Всё хорошо. Работаем"
+
+
 @app.route("/", methods=['POST']) # type:ignore
 def main():
     if request.json is None:
@@ -107,3 +112,8 @@ def main():
             "end_session": False
         }
     }, ensure_ascii=False)
+
+
+if __name__ == "__main__":
+    from waitress import serve
+    serve(app, host="0.0.0.0", port=5000)
