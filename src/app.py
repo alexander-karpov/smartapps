@@ -37,7 +37,7 @@ class SessionsManager:
 
     def __init__(self) -> None:
         self._sessions = OrderedDict()
-        self._max_size = 64
+        self._max_size = 32
 
 
     def __contains__(self, key: str) -> bool:
