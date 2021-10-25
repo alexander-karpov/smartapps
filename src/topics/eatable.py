@@ -1,4 +1,5 @@
 from intents import EatableRiddleIntent, AgreeIntent, EatableGuessIntent, WhatCanYouDoIntent, YouGuessedRightIntent
+from intents2 import MaybeIntent
 from loggers import RiddleLogger
 from dialog import HelpReply, TextReply, Topic
 from generators import ShuffledSequence
@@ -46,22 +47,21 @@ class EatableTopic(Topic, EatableClassifierService, EatableRiddleService):
         yield WhatCanYouDoTopic()
 
         yield TextReply(
-            "Хорошо. Давай поиграем.",
-            ("Я очень люблю игру «Съедобное, несъедобное».", "Я очень люблю игру - «Съедобное, несъедобное»."),
+            "Давай поиграем.",
+            ("Я очень люблю игру «Вкусно – невкусно».", "Я очень люблю игру - «Вкусно – невкусно»."),
             "Я играю лучше всех. А ты умеешь играть?"
         )
 
         rules = [
-            "Правила этой игры очень простые:",
-            "я загадаю слово, а ты отгадай, съедобное оно или несъедобное.",
-            "Потом твоя очередь: загадай что-нибудь, а я отгадаю – съедобное оно или нет.",
+            "Правила очень простые: я загадаю слово, а ты отгадай, съедобное оно или несъедобное.",
+            "Потом твоя очередь: ты загадываешь, а я отгадываю.",
         ]
 
         yield HelpReply(*rules, "Готов попробовать?")
 
-        i_can:AgreeIntent = yield AgreeIntent()
+        i_can:MaybeIntent[AgreeIntent] = yield MaybeIntent(AgreeIntent())
 
-        if i_can:
+        if i_can.maybe(lambda i: i.yes):
             yield TextReply("Тогда давай играть. Я начинаю.")
         else:
             yield TextReply(
@@ -79,9 +79,11 @@ class EatableTopic(Topic, EatableClassifierService, EatableRiddleService):
             ))
 
             yield HelpReply(
-                f"Мы играем поочереди.",
                 f"Сейчас я загадываю, а ты отгадываешь.",
-                (f"Вот моя загадка: {bot_riddle} – это съедобное?", f"Вот моя загадка - - {bot_riddle} - - это съедобное?")
+                (
+                    f"Угадай, {bot_riddle} – это съедобное?",
+                    f"Угадай - - {bot_riddle} - - это съедобное?"
+                )
             )
 
             user_guess: EatableGuessIntent = yield EatableGuessIntent()

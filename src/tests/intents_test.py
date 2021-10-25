@@ -15,7 +15,6 @@ class TestAgreeIntent:
         "хорошо",
         "я на всё согласен",
         "да я лучше тебя знаю",
-        "конечно умею а как тут не уметь",
     ])
     def test_positive(self, intent: AgreeIntent, command: str):
         assert intent.match(command)
