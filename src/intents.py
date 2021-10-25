@@ -50,6 +50,11 @@ class EatableRiddleIntent(Intent):
 class IKnow(Intent):
     yes: bool
 
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.yes = False
+
     def match(self, command: str) -> bool:
         KNOW =  morph_pipeline(["знаю"])
 
