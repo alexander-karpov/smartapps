@@ -3,17 +3,29 @@ from yargy import Parser, rule # type: ignore
 from yargy.pipelines import morph_pipeline # type: ignore
 
 
-def cut_morph(command: str, words: Sequence[str]) -> str:
+_parser = Parser(rule(morph_pipeline([
+    "это",
+    "или",
+    "алиса",
+    'вкусное',
+    'невкусное',
+    'не вкусное',
+    "можно есть",
+    'съедобное',
+    'несъедобное',
+    'не съедобное',
+])))
+
+
+def cut_morph(command: str) -> str:
     """
     Удаляет совпадения в любой форме
     """
-    pattern = rule(morph_pipeline(words))
-    parser = Parser(pattern)
 
     result = []
     start = 0
 
-    for m in parser.findall(command):
+    for m in _parser.findall(command):
         part = command[start:m.span.start]
 
         if part:
