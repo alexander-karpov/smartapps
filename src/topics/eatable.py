@@ -173,6 +173,7 @@ class EatableTopic(Topic, EatableClassifierService, EatableRiddleService):
             yield TextReply(self.choice((
                 "Моя очередь.",
                 "Теперь я загадываю.",
+                "Вот новая загадка.",
             )))
 
 

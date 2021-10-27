@@ -75,7 +75,7 @@ class EatableRiddleService(MongoDbService):
 
     def _get_next_batch(self, is_eatable) -> List[str]:
         pipeline = [
-            {'$match': {'is_eatable': is_eatable}},
+            {'$match': {'is_eatable': is_eatable, 'is_hidden': {"$ne": True}}},
             {'$sample': {'size': 8}}
         ]
 
