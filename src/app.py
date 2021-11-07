@@ -9,6 +9,8 @@ import os
 import ssl
 import pymongo
 from loggers import CommandLogger, RiddleLogger, MognoCommandLogger, MongoRiddleLogger, StdoutCommandLogger, StdoutRiddleLogger
+import yargy_fix
+
 
 app = Flask(__name__)
 

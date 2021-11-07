@@ -1,6 +1,6 @@
 from typing import Tuple
 import pytest
-from intents import AgreeIntent, EatableGuessIntent, EatableRiddleIntent, YouGuessedRightIntent
+from intents import AgreeIntent, EatableGuessIntent, EatablePuzzleIntent, YouGuessedRightIntent
 
 
 class TestAgreeIntent:
@@ -100,7 +100,7 @@ class TestYouGuessedRightIntent:
 class TestEatableRiddleIntent:
     @pytest.fixture(scope='function')
     def intent(self):
-        yield EatableRiddleIntent()
+        yield EatablePuzzleIntent()
 
     @pytest.mark.parametrize("cases", [
         ("банан это съедобно", "банан"),
@@ -109,7 +109,7 @@ class TestEatableRiddleIntent:
         ("зубная паста это съедобное или несъедобное", "зубная паста"),
         ("алиса сок это съедобное", "сок"),
     ])
-    def test_positive(self, intent: EatableRiddleIntent, cases: Tuple[str, str]):
+    def test_positive(self, intent: EatablePuzzleIntent, cases: Tuple[str, str]):
         assert intent.match(cases[0])
         assert intent.riddle == cases[1]
 

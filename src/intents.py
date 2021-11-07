@@ -23,7 +23,7 @@ class NounIntent(Intent):
             return False
 
 
-class EatableRiddleIntent(Intent):
+class EatablePuzzleIntent(Intent):
     riddle: str
 
     def match(self, command: str) -> bool:

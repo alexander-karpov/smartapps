@@ -1,5 +1,5 @@
-from intents import EatableRiddleIntent, AgreeIntent, EatableGuessIntent, WhatCanYouDoIntent, YouGuessedRightIntent
-from intents2 import MaybeIntent
+from intents import EatablePuzzleIntent, AgreeIntent, EatableGuessIntent, WhatCanYouDoIntent, YouGuessedRightIntent
+from intents2 import MaybeIntent, EntityIntent
 from loggers import RiddleLogger
 from dialog import HelpReply, TextReply, Topic
 from generators import ShuffledSequence
@@ -123,16 +123,37 @@ class EatableTopic(Topic, EatableClassifierService, EatableRiddleService):
                 "Скажи свою загадку.",
             )
 
-            user_riddle: EatableRiddleIntent = yield EatableRiddleIntent()
-            bot_guess = self.is_eatable(user_riddle.riddle)
+            user_pazzle: EntityIntent = yield EntityIntent()
+            user_pazzle_nomn = str(user_pazzle.collocation.inflect({ 'nomn' }))
+            user_pazzle_accs = str(user_pazzle.collocation.inflect({ 'accs' }))
+            bot_guess = self.is_eatable((user_pazzle_nomn))
 
             if bot_guess:
-                yield TextReply("Похоже это можно есть. Съедобное! Я угадала?")
+                yield TextReply(self.choice((
+                    "{nomn} - это очень вкусно. Съедобное!",
+                    "Я не очень люблю {accs}, но это съедобное.",
+                    "Я не пробовала {accs}, но уверена, что это вкусно. Съедобное!",
+                    "А ты любишь {accs}? Я – да. Это съедобное!",
+                    "{nomn} – это моё любимое. Это съедобное!",
+                    "{accs} можно есть. Я пробовала. Съедобное!",
+                )).format(nomn=user_pazzle_nomn, accs=user_pazzle_accs))
             else:
-                yield TextReply("Такое есть нельзя. Несъедобное! Правильно я говорю?")
+                yield TextReply(self.choice((
+                    "{nomn} - это не вкусно и не съедобно.",
+                    "Может быть кто-то ест {accs}, но не я. Несъедобное!",
+                    "{accs} есть нельзя. Несъедобное!",
+                    "Если съесть {accs}, будет плохо. Это несъедобное!",
+                    "{nomn} – это не вкусно. Несъедобное!",
+                    "Нет, {nomn} – это несъедобное.",
+                )).format(nomn=user_pazzle_nomn, accs=user_pazzle_accs))
+
+            yield TextReply(self.choice((
+                "Я угадала?",
+                "Правильно я говорю?",
+            )))
 
             yield HelpReply(
-                (f"Твоя загадка была: «{user_riddle.riddle}».", f"Твоя загадка была - - {user_riddle.riddle}."),
+                (f"Твоя загадка была: «{user_pazzle_nomn}».", f"Твоя загадка была - - {user_pazzle_nomn}."),
                 "Я думаю, что это",
                 "можно есть. Это съедобное!" if bot_guess else "нельзя есть. Несъедобное!",
                 "Скажи, я отгадала твою загадку?"
@@ -164,7 +185,7 @@ class EatableTopic(Topic, EatableClassifierService, EatableRiddleService):
                 )))
 
             self._riddle_logger.log(
-                riddle=user_riddle.riddle,
+                riddle=user_pazzle_nomn,
                 guess=bot_guess,
                 answer=bot_guess if bot_guessed_right.right else not bot_guess,
                 is_user=True
