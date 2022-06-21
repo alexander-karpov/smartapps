@@ -1,7 +1,7 @@
 from typing import ClassVar
 from util import cut_morph
 from enum import Enum, auto
-from dialog import Intent
+from smartapps.dialog.dialog import Intent
 from yargy import Parser, rule, or_ # type: ignore
 from yargy.predicates import eq, gram, true # type: ignore
 from yargy.pipelines import morph_pipeline
