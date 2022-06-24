@@ -54,15 +54,8 @@ class HelpReply(TextReply):
     pass
 
 
-class Intent(ABC):
-    @abstractmethod
-    def match(self, command: str) -> bool:
-        pass
 
 
-class AnyIntent(Intent):
-    def match(self, command: str) -> bool:
-        return True
 
 
 class Topic(ABC):

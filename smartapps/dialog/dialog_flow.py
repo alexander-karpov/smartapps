@@ -1,6 +1,7 @@
 
 from dataclasses import dataclass
 from typing import List, Optional, Protocol
+from smartapps.dialog.intent import Intent
 from smartapps.dialog.reply import Reply
 from smartapps.dialog.input import Input
 from smartapps.dialog.response_builder import ResponseBuilder
@@ -31,6 +32,7 @@ class Transition(Protocol):
 class TransitionEffect:
     reply: Reply
     transitions: List[Transition]
+
 
 class ScriptedResponseGenerator(ResponseGenerator):
     _start: Transition
@@ -101,11 +103,28 @@ class HagiGreatingTransition(Transition):
         return input.utterance == 'привет'
 
     def effect(self) -> TransitionEffect:
-        return TransitionEffect(Reply('Привет, человечик', ('👻', '. р-р-р!')), [])
+        return TransitionEffect(Reply('Привет, человечик. Хочешь поиграть со мной?', ('👻', '. р-р-р!')), [
+            YesTransition(), NoTransition()
+        ])
+
+class NoTransition(Transition):
+    def trigger(self, input: Input) -> bool:
+        return Intent('нет', 'я боюсь', 'ты меня съешь').match(input.utterance)
+
+    def effect(self) -> 'TransitionEffect':
+        return TransitionEffect(Reply('Не надо бояться. Сначала я с тобой поиграю.'), transitions=[])
+
+
+class YesTransition(Transition):
+    def trigger(self, input: Input) -> bool:
+        return Intent('да', 'хочу', 'во что будем играть').match(input.utterance)
+
+    def effect(self) -> 'TransitionEffect':
+        return TransitionEffect(Reply('Я люблю играть в прятки. Ты готов прятаться?'), transitions=[])
 
 
 class EchoResponseGenerator(ResponseGenerator):
-    def generate(self, input: Input) -> Optional[ResponseCandidate]:
+    def generate(self, input: Input) -> ResponseCandidate | None:
         return ResponseCandidate(Reply(input.utterance), False)
 
     def save_changes(self) -> None:
