@@ -1,5 +1,5 @@
 import json
-from smartapps.dialog.dialog_flow import dialog
+from smartapps.dialog.dialog_flow import get_dialog
 
 
 async def app(scope, receive, send):
@@ -7,7 +7,8 @@ async def app(scope, receive, send):
     assert scope['method'] == 'POST'
 
     request = json.loads(await read_body(receive))
-    response = dialog.handle_request(request)
+    d = get_dialog(request)
+    response = d.handle_request(request)
 
     await send({
         'type': 'http.response.start',

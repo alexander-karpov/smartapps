@@ -1,10 +1,12 @@
 
 from dataclasses import dataclass
-from typing import List, Optional, Protocol
+from typing import Callable, List, Optional, Protocol, TypeAlias
 from smartapps.dialog.intent import Intent
 from smartapps.dialog.reply import Reply
 from smartapps.dialog.input import Input
 from smartapps.dialog.response_builder import ResponseBuilder
+from smartapps.dialog.similarity_index import SimilarityIndex, similarity_index
+
 
 @dataclass
 class ResponseCandidate:
@@ -20,38 +22,41 @@ class ResponseGenerator(Protocol):
         ...
 
 
-class Transition(Protocol):
-    def trigger(self, input: Input) -> bool:
-        ...
 
-    def effect(self) -> 'TransitionEffect':
-        ...
-
+Trigger: TypeAlias = str
+ScriptStage: TypeAlias = dict[Trigger, 'ScriptTransition']
 
 @dataclass
-class TransitionEffect:
+class ScriptTransitionData:
     reply: Reply
-    transitions: List[Transition]
+    stage: ScriptStage
+
+ScriptTransition: TypeAlias = Callable[[Input], ScriptTransitionData]
 
 
 class ScriptedResponseGenerator(ResponseGenerator):
-    _start: Transition
-    _transitions: List[Transition]
+    _start: ScriptTransition
+    _transitions: dict[str, ScriptTransition]
     _changes: Optional[TransitionEffect]
     _in_progress: bool = False
+    similarity: SimilarityIndex = similarity_index
 
-    def __init__(self, start: Transition):
+    def __init__(self, start: ScriptTransition):
         self._start = start
         self._transitions = [start]
 
     def generate(self, input: Input) -> Optional[ResponseCandidate]:
         self._changes = None
-        triggered = next((t for t in self._transitions if t.trigger(input)), None)
 
-        if triggered is None:
+        most_similar = self.similarity.most_similar(
+            intents=[tran.trigger(input).samples for tran in self._transitions],
+            text=input.utterance
+        )
+
+        if most_similar is None:
             return None
 
-        self._changes = triggered.effect()
+        self._changes = self._transitions[most_similar].effect()
 
         return ResponseCandidate(self._changes.reply, bool(self._changes.transitions))
 
@@ -98,29 +103,37 @@ class Dialog:
 
 #----------------------------------------------------------
 
-class HagiGreatingTransition(Transition):
-    def trigger(self, input: Input) -> bool:
-        return input.utterance == 'привет'
+class HagiGreatingTransition(ScriptTransition):
+    def trigger(self, input: Input) -> Intent:
+        return Intent('привет', 'привет хаги ваги')
 
     def effect(self) -> TransitionEffect:
         return TransitionEffect(Reply('Привет, человечик. Хочешь поиграть со мной?', ('👻', '. р-р-р!')), [
             YesTransition(), NoTransition()
         ])
 
-class NoTransition(Transition):
-    def trigger(self, input: Input) -> bool:
-        return Intent('нет', 'я боюсь', 'ты меня съешь').match(input.utterance)
+class NoTransition(ScriptTransition):
+    def trigger(self, input: Input) -> Intent:
+        return Intent('нет', 'я боюсь', 'ты меня съешь')
 
     def effect(self) -> 'TransitionEffect':
-        return TransitionEffect(Reply('Не надо бояться. Сначала я с тобой поиграю.'), transitions=[])
+        return TransitionEffect(Reply('Не надо бояться. Сначала я с тобой поиграю.'), transitions=[GameTransition()])
 
 
-class YesTransition(Transition):
-    def trigger(self, input: Input) -> bool:
-        return Intent('да', 'хочу', 'во что будем играть').match(input.utterance)
+class YesTransition(ScriptTransition):
+    def trigger(self, input: Input) -> Intent:
+        return Intent('да', 'хочу', 'во что будем играть')
 
     def effect(self) -> 'TransitionEffect':
-        return TransitionEffect(Reply('Я люблю играть в прятки. Ты готов прятаться?'), transitions=[])
+        return TransitionEffect(Reply('Я люблю играть в прятки. Ты готов прятаться?'), transitions=[GameTransition()])
+
+class GameTransition(ScriptTransition):
+    def trigger(self, input: Input) -> Intent:
+        return Intent('готов', 'да', 'я спрятался')
+
+    def effect(self) -> 'TransitionEffect':
+        return TransitionEffect(Reply('Раз. Два. Пять. Я иду искать. Ку-ку'), transitions=[])
+
 
 
 class EchoResponseGenerator(ResponseGenerator):
@@ -131,7 +144,43 @@ class EchoResponseGenerator(ResponseGenerator):
         pass
 
 
-dialog = Dialog([
+_dialog = Dialog([
     ScriptedResponseGenerator(start=HagiGreatingTransition()),
     EchoResponseGenerator(),
 ])
+
+def get_dialog(request:dict) -> Dialog:
+    global _dialog
+
+    if request["session"]["new"]:
+        _dialog = Dialog([
+            ScriptedResponseGenerator(start=HagiGreatingTransition()),
+            EchoResponseGenerator(),
+        ])
+
+    return _dialog
+
+
+def hello(reply, on):
+    @on('да')
+    def _():
+        reply('Давай играть. Во что будем играть?')
+
+        @on('Прятки')
+        def _():
+            reply('Я хорошо ищу. Ты спрятался?')
+
+            @on('да')
+            def _():
+                reply('А я тебя уже съел. Ам!')
+
+            @on('нет')
+            def _():
+                reply('Вот и зря. Ам!')
+
+        @reply('Вышибала')
+        def _(): reply('Тогла лови мячик. Поймал?')
+
+    @on('нет')
+    def _():
+        return 'Ну как хочешь'

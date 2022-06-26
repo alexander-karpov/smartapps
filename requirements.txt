@@ -6,3 +6,4 @@ pymongo
 torch
 transformers
 numpy
+faiss-cpu
