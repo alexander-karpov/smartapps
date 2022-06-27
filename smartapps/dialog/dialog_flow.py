@@ -1,8 +1,8 @@
 
 from dataclasses import dataclass
+from types import FunctionType
 from typing import Callable
 
-from traitlets import default
 from smartapps.dialog.reply import Reply
 from smartapps.dialog.input import Input
 from smartapps.dialog.response_builder import ResponseBuilder
@@ -10,10 +10,23 @@ from smartapps.dialog.similarity_index import SimilarityIndex, similarity_index
 
 @dataclass
 class Handler:
-    intent: tuple[str, ...] | None
     action: Callable[[], None]
     generation: int
-    otherwise: bool
+
+
+@dataclass
+class PhraseHandler(Handler):
+    phrases: tuple[str, ...]
+
+
+@dataclass
+class TriggerHandler(Handler):
+    trigger: Callable[[Input], bool]
+
+
+@dataclass
+class OtherwiseHandler(Handler):
+    pass
 
 
 class Dialog:
@@ -43,19 +56,27 @@ class Dialog:
         self._update_handlers()
 
     def _generate_response(self, input: Input) -> None:
-        with_intent = [h for h in self._handlers if h.intent]
+        triggered = next((h for h in self._handlers if isinstance(h, TriggerHandler) and h.trigger(input)), None)
 
-        most_similar = self._sim_index.most_similar(
-            intents=[h.intent for h in with_intent if h.intent],
-            text=input.utterance
-        ) if with_intent else None
-
-        if most_similar is not None:
-            with_intent[most_similar].action()
+        if triggered:
+            triggered.action()
 
             return
 
-        youngest_otherwise = next((h for h in reversed(self._handlers) if h.otherwise), None)
+        phrased = [h for h in self._handlers if isinstance(h, PhraseHandler)]
+
+        if phrased and input.utterance:
+            most_similar = self._sim_index.most_similar(
+                intents=[h.phrases for h in phrased],
+                text=input.utterance
+            )
+
+            if most_similar is not None:
+                phrased[most_similar].action()
+
+                return
+
+        youngest_otherwise = next((h for h in reversed(self._handlers) if isinstance(h, OtherwiseHandler)), None)
 
         if youngest_otherwise:
             youngest_otherwise.action()
@@ -68,33 +89,56 @@ class Dialog:
         self._handlers = [h for h in self._handlers if h.generation in (0, self._handlers_generation)]
         self._handlers_generation += 1
 
-    def append_handler(self, intent: str | None = None):
+    def append_handler(self, intent: str | Callable[[Input], bool] | None = None):
         def decorator(action: Callable[[], None]):
-            self._handlers.append(Handler(
-                intent=
-                    tuple(phrase.strip() for phrase in intent.lower().split(','))
-                    if intent else None,
-                action=action,
-                generation=self._handlers_generation,
-                otherwise=not intent
-            ))
+            match intent:
+                case str():
+                    self._handlers.append(PhraseHandler(
+                        phrases=tuple(phrase.strip() for phrase in intent.lower().split(',')),
+                        action=action,
+                        generation=self._handlers_generation,
+                    ))
+                case FunctionType():
+                    self._handlers.append(TriggerHandler(
+                        trigger=intent,
+                        action=action,
+                        generation=self._handlers_generation,
+                    ))
+                case _:
+                    self._handlers.append(OtherwiseHandler(
+                        action=action,
+                        generation=self._handlers_generation,
+                    ))
 
             return action
 
         return decorator
 
-    def append_reply(self, reply: str | tuple[str,str] | Reply ):
-        match reply:
-            case Reply():
-                reply.append_to(self._response_builder)
-            case _:
-                Reply(reply).append_to(self._response_builder)
+    def append_reply(self, *replies: str | tuple[str,str] | Reply ):
+        for reply in replies:
+            match reply:
+                case Reply():
+                    reply.append_to(self._response_builder)
+                case _:
+                    Reply(reply).append_to(self._response_builder)
 
 #----------------------------------------------------------
 
 def create_hagi_dialog() -> Dialog:
     dialog = Dialog()
     on, say = dialog.append_handler, dialog.append_reply
+
+    @on(lambda i: i.is_new_session)
+    def _():
+        say(
+            ('Хаги - кукла из игры. Ожила так что беги.', 'Х+аги -- кукла из игры! Ожила - так что беги.'),
+            # silence(500)
+            'Я ХАГИ ВАГИ. Я буду играть с тобой в повторюшу.'
+            # silence(500)
+            'Но не зли меня!'
+            # silence(500)
+            'А теперь скажи что-нибудь.'
+        )
 
     @on('привет, здравтвуйте, привет хаги ваги')
     def _():
