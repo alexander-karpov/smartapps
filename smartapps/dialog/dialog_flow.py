@@ -1,186 +1,138 @@
 
 from dataclasses import dataclass
-from typing import Callable, List, Optional, Protocol, TypeAlias
-from smartapps.dialog.intent import Intent
+from typing import Callable
+
+from traitlets import default
 from smartapps.dialog.reply import Reply
 from smartapps.dialog.input import Input
 from smartapps.dialog.response_builder import ResponseBuilder
 from smartapps.dialog.similarity_index import SimilarityIndex, similarity_index
 
-
 @dataclass
-class ResponseCandidate:
-    body: Reply
-    has_continuation: bool
-
-
-class ResponseGenerator(Protocol):
-    def generate(self, input: Input) -> Optional[ResponseCandidate]:
-        ...
-
-    def save_changes(self) -> None:
-        ...
-
-
-
-Trigger: TypeAlias = str
-ScriptStage: TypeAlias = dict[Trigger, 'ScriptTransition']
-
-@dataclass
-class ScriptTransitionData:
-    reply: Reply
-    stage: ScriptStage
-
-ScriptTransition: TypeAlias = Callable[[Input], ScriptTransitionData]
-
-
-class ScriptedResponseGenerator(ResponseGenerator):
-    _start: ScriptTransition
-    _transitions: dict[str, ScriptTransition]
-    _changes: Optional[TransitionEffect]
-    _in_progress: bool = False
-    similarity: SimilarityIndex = similarity_index
-
-    def __init__(self, start: ScriptTransition):
-        self._start = start
-        self._transitions = [start]
-
-    def generate(self, input: Input) -> Optional[ResponseCandidate]:
-        self._changes = None
-
-        most_similar = self.similarity.most_similar(
-            intents=[tran.trigger(input).samples for tran in self._transitions],
-            text=input.utterance
-        )
-
-        if most_similar is None:
-            return None
-
-        self._changes = self._transitions[most_similar].effect()
-
-        return ResponseCandidate(self._changes.reply, bool(self._changes.transitions))
-
-    def save_changes(self) -> None:
-        assert self._changes
-
-        self._transitions = self._changes.transitions
-        self._in_progress = True
-        self._changes = None
-
-    @property
-    def in_progress(self) -> bool:
-        return self._in_progress
+class Handler:
+    intent: tuple[str, ...] | None
+    action: Callable[[], None]
+    generation: int
+    otherwise: bool
 
 
 class Dialog:
-    _response_generators: list[ResponseGenerator]
+    _handlers: list[Handler]
+    _sim_index: SimilarityIndex
+    _response_builder: ResponseBuilder
+    _handlers_generation: int
 
-    def __init__(self, response_generators: list[ResponseGenerator]) -> None:
-        self._response_generators = response_generators
+    def __init__(self) -> None:
+        self._handlers = []
+        self._sim_index: SimilarityIndex = similarity_index
+        self._handlers_generation = 0
 
     def handle_request(self, request: dict) -> dict:
-        response_builder = ResponseBuilder()
+        self._response_builder = ResponseBuilder()
         input = Input(request)
 
         if input.is_ping:
-            response_builder.append_text("Pong!")
-            response_builder.end_session()
+            self._response_builder.append_text("Pong!")
+            self._response_builder.end_session()
         else:
-            self.update(input, response_builder)
+            self._generate_response(input)
 
-        return response_builder.build()
+        return self._response_builder.build()
 
-    def update(self, input: Input, response_builder: ResponseBuilder) -> None:
-        for rg in self._response_generators:
-            candidate = rg.generate(input)
+    def after_response(self):
+        self._update_handlers()
 
-            if candidate:
-                candidate.body.append_to(response_builder)
-                rg.save_changes()
-                return
+    def _generate_response(self, input: Input) -> None:
+        with_intent = [h for h in self._handlers if h.intent]
 
-        response_builder.append_text("Sorry, I don't understand.")
+        most_similar = self._sim_index.most_similar(
+            intents=[h.intent for h in with_intent if h.intent],
+            text=input.utterance
+        ) if with_intent else None
+
+        if most_similar is not None:
+            with_intent[most_similar].action()
+
+            return
+
+        youngest_otherwise = next((h for h in reversed(self._handlers) if h.otherwise), None)
+
+        if youngest_otherwise:
+            youngest_otherwise.action()
+
+            return
+
+        self._response_builder.append_text("Я полохо тебя слышу. Подойти поближе и повтори ещё разок.")
+
+    def _update_handlers(self):
+        self._handlers = [h for h in self._handlers if h.generation in (0, self._handlers_generation)]
+        self._handlers_generation += 1
+
+    def append_handler(self, intent: str | None = None):
+        def decorator(action: Callable[[], None]):
+            self._handlers.append(Handler(
+                intent=
+                    tuple(phrase.strip() for phrase in intent.lower().split(','))
+                    if intent else None,
+                action=action,
+                generation=self._handlers_generation,
+                otherwise=not intent
+            ))
+
+            return action
+
+        return decorator
+
+    def append_reply(self, reply: str | tuple[str,str] | Reply ):
+        match reply:
+            case Reply():
+                reply.append_to(self._response_builder)
+            case _:
+                Reply(reply).append_to(self._response_builder)
 
 #----------------------------------------------------------
 
-class HagiGreatingTransition(ScriptTransition):
-    def trigger(self, input: Input) -> Intent:
-        return Intent('привет', 'привет хаги ваги')
+def create_hagi_dialog() -> Dialog:
+    dialog = Dialog()
+    on, say = dialog.append_handler, dialog.append_reply
 
-    def effect(self) -> TransitionEffect:
-        return TransitionEffect(Reply('Привет, человечик. Хочешь поиграть со мной?', ('👻', '. р-р-р!')), [
-            YesTransition(), NoTransition()
-        ])
+    @on('привет, здравтвуйте, привет хаги ваги')
+    def _():
+        say('Привет, человечик')
 
-class NoTransition(ScriptTransition):
-    def trigger(self, input: Input) -> Intent:
-        return Intent('нет', 'я боюсь', 'ты меня съешь')
+    @on('ты хороший, ты молодец')
+    def _():
+        say('Ты тоже. Ты вкусный')
 
-    def effect(self) -> 'TransitionEffect':
-        return TransitionEffect(Reply('Не надо бояться. Сначала я с тобой поиграю.'), transitions=[GameTransition()])
+    @on('давай играть, хочешь поиграть, я хочу с тобой поиграть')
+    def _():
+        say('Я люблю играть с человечками в догонялки и в прятки')
 
+        @on('в догонялки, догони меня')
+        def _():
+            say('Я догнал тебя. Ам!')
 
-class YesTransition(ScriptTransition):
-    def trigger(self, input: Input) -> Intent:
-        return Intent('да', 'хочу', 'во что будем играть')
+        @on('в прятки, я спрятался, попробуй найди меня')
+        def _():
+            say('Я нашёл тебя. Ам!')
 
-    def effect(self) -> 'TransitionEffect':
-        return TransitionEffect(Reply('Я люблю играть в прятки. Ты готов прятаться?'), transitions=[GameTransition()])
+        @on()
+        def _():
+            say('Я не знаю такую игру ')
 
-class GameTransition(ScriptTransition):
-    def trigger(self, input: Input) -> Intent:
-        return Intent('готов', 'да', 'я спрятался')
+    @on()
+    def _():
+        say('Уходи!')
 
-    def effect(self) -> 'TransitionEffect':
-        return TransitionEffect(Reply('Раз. Два. Пять. Я иду искать. Ку-ку'), transitions=[])
-
-
-
-class EchoResponseGenerator(ResponseGenerator):
-    def generate(self, input: Input) -> ResponseCandidate | None:
-        return ResponseCandidate(Reply(input.utterance), False)
-
-    def save_changes(self) -> None:
-        pass
+    return dialog
 
 
-_dialog = Dialog([
-    ScriptedResponseGenerator(start=HagiGreatingTransition()),
-    EchoResponseGenerator(),
-])
+_dialog = create_hagi_dialog()
 
 def get_dialog(request:dict) -> Dialog:
     global _dialog
 
     if request["session"]["new"]:
-        _dialog = Dialog([
-            ScriptedResponseGenerator(start=HagiGreatingTransition()),
-            EchoResponseGenerator(),
-        ])
+        _dialog = create_hagi_dialog()
 
     return _dialog
-
-
-def hello(reply, on):
-    @on('да')
-    def _():
-        reply('Давай играть. Во что будем играть?')
-
-        @on('Прятки')
-        def _():
-            reply('Я хорошо ищу. Ты спрятался?')
-
-            @on('да')
-            def _():
-                reply('А я тебя уже съел. Ам!')
-
-            @on('нет')
-            def _():
-                reply('Вот и зря. Ам!')
-
-        @reply('Вышибала')
-        def _(): reply('Тогла лови мячик. Поймал?')
-
-    @on('нет')
-    def _():
-        return 'Ну как хочешь'

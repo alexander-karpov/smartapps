@@ -7,8 +7,8 @@ async def app(scope, receive, send):
     assert scope['method'] == 'POST'
 
     request = json.loads(await read_body(receive))
-    d = get_dialog(request)
-    response = d.handle_request(request)
+    dialog = get_dialog(request)
+    response = dialog.handle_request(request)
 
     await send({
         'type': 'http.response.start',
@@ -21,6 +21,8 @@ async def app(scope, receive, send):
         'type': 'http.response.body',
         'body': json.dumps(response, ensure_ascii=False).encode('utf-8'),
     })
+
+    dialog.after_response()
 
 
 async def read_body(receive):

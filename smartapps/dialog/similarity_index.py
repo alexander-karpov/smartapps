@@ -38,6 +38,9 @@ class SimilarityIndex:
         intent_to_ids = [self.add(phrases) for phrases in intents]
         nearest = list(self.search(text, threshold))
 
+        if not nearest:
+            return None
+
         # Сортируем интенты по позициям их фраз в массиве nearest
         intent_to_nearest = [(i, sorted([nearest.index(id) if id in nearest else np.inf for id in ids])) for i, ids in enumerate(intent_to_ids)]
         intent_to_nearest_sorted = sorted(intent_to_nearest, key=lambda item: item[1])
