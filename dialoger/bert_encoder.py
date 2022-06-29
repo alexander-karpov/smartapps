@@ -1,6 +1,11 @@
 import torch
-from transformers import AutoTokenizer, AutoModel # type: ignore
+import logging
 import numpy as np
+from transformers import AutoTokenizer, AutoModel # type: ignore
+from dialoger.set_global_logging_level import set_global_logging_level
+
+
+set_global_logging_level(logging.ERROR, ['transformers'])
 
 
 class BertEncoder:

@@ -1,6 +1,6 @@
 import faiss
 import numpy as np
-from smartapps.dialog.bert_encoder import BertEncoder, bert_encoder
+from dialoger.bert_encoder import BertEncoder, bert_encoder
 
 
 class SimilarityIndex:
@@ -29,14 +29,14 @@ class SimilarityIndex:
 
         return tuple(self.phrase_to_id[t] for t in phrases)
 
-    def search(self, text: str, threshold = 0.85) -> np.ndarray:
-        _, D, I = self.index.range_search(self.encoder([text]), threshold)
+    def search(self, text: str, range) -> np.ndarray:
+        _, D, I = self.index.range_search(self.encoder([text]), range)
 
         return I[np.argsort(1 - D)]
 
-    def most_similar(self, intents: list[tuple[str, ...]], text: str, threshold = 0.87) -> int | None:
+    def most_similar(self, intents: list[tuple[str, ...]], text: str, range = 0.87) -> int | None:
         intent_to_ids = [self.add(phrases) for phrases in intents]
-        nearest = list(self.search(text, threshold))
+        nearest = list(self.search(text, range))
 
         if not nearest:
             return None

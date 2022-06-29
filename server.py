@@ -1,5 +1,5 @@
 import json
-from smartapps.dialog.dialog_flow import get_dialog
+from hagi import get_dialog
 
 
 async def app(scope, receive, send):

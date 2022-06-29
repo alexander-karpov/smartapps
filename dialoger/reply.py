@@ -1,4 +1,4 @@
-from smartapps.dialog.response_builder import ResponseBuilder
+from dialoger.response_builder import ResponseBuilder
 
 class Reply:
     _text: list[str]
