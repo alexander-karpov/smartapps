@@ -1,5 +1,9 @@
 import json
 from hagi import get_dialog
+from db import db
+from mogno_logger import MognoLogger
+
+logger = MognoLogger(db, "hagi2")
 
 
 async def app(scope, receive, send):
@@ -23,6 +27,7 @@ async def app(scope, receive, send):
     })
 
     dialog.after_response()
+    logger.log(request, response)
 
 
 async def read_body(receive):
