@@ -7,7 +7,7 @@ async def app(scope, receive, send):
     assert scope['method'] == 'POST'
 
     request = json.loads(await read_body(receive))
-    dialog = get_dialog(request)
+    dialog = get_dialog(request["session"]["session_id"])
     response = dialog.handle_request(request)
 
     await send({

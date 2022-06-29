@@ -1,5 +1,6 @@
 
 from dataclasses import dataclass
+from functools import lru_cache
 from types import FunctionType
 from typing import Callable
 
@@ -124,7 +125,7 @@ class Dialog:
 
 #----------------------------------------------------------
 
-def create_hagi_dialog() -> Dialog:
+def _create_hagi_dialog() -> Dialog:
     dialog = Dialog()
     on, say = dialog.append_handler, dialog.append_reply
 
@@ -190,12 +191,6 @@ def create_hagi_dialog() -> Dialog:
     return dialog
 
 
-_dialog = create_hagi_dialog()
-
-def get_dialog(request:dict) -> Dialog:
-    global _dialog
-
-    if request["session"]["new"]:
-        _dialog = create_hagi_dialog()
-
-    return _dialog
+@lru_cache(maxsize=64)
+def get_dialog(session_id: str) -> Dialog:
+    return _create_hagi_dialog()
