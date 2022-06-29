@@ -18,6 +18,7 @@ class Dialog:
     _sim_index: SimilarityIndex
     _response_builder: ResponseBuilder
     _handlers_generation: int
+    _input: Input | None
 
     def __init__(self) -> None:
         self._handlers = []
@@ -37,9 +38,12 @@ class Dialog:
         return self._response_builder.build()
 
     def after_response(self):
+        self._input = None
         self._update_handlers()
 
     def _generate_response(self, input: Input) -> None:
+        self._input = input
+
         triggered = next((h for h in self._handlers if isinstance(h, TriggerHandler) and h.trigger(input)), None)
 
         if triggered:
@@ -73,7 +77,7 @@ class Dialog:
         self._handlers = [h for h in self._handlers if h.generation in (0, self._handlers_generation)]
         self._handlers_generation += 1
 
-    def append_handler(self, intent: str | Callable[[Input], bool] | None = None):
+    def append_handler(self, intent: str | Callable[[], bool] | None = None):
         def decorator(action: Callable[[], None]):
             match intent:
                 case str():
@@ -105,3 +109,8 @@ class Dialog:
                     reply.append_to(self._response_builder)
                 case _:
                     Reply(reply).append_to(self._response_builder)
+
+    def input(self) -> Input:
+        assert self._input
+
+        return self._input

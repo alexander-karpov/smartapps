@@ -1,6 +1,6 @@
-
 from functools import lru_cache
 from dialoger import Dialog
+from hagi.append_chitchat import append_chitchat
 
 
 def _create_hagi_dialog() -> Dialog:
@@ -62,9 +62,7 @@ def _create_hagi_dialog() -> Dialog:
         def _():
             say('Я не знаю такую игру ')
 
-    @on()
-    def _():
-        say('Уходи!')
+    append_chitchat(dialog)
 
     return dialog
 

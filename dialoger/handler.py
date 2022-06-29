@@ -1,6 +1,6 @@
 
+from dataclasses import dataclass
 from typing import Callable
-from attr import dataclass
 from dialoger.input import Input
 
 

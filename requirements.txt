@@ -1,9 +1,9 @@
 pymorphy2
 pymorphy2-dicts-ru
 uvicorn[standard]
-yargy
 pymongo
 torch
 transformers
 numpy
 faiss-cpu
+stanza
