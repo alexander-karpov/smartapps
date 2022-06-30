@@ -8,6 +8,9 @@ class ResponseBuilder:
         self._tts = []
 
     def append_text(self, text: str) -> None:
+        if not text:
+            return
+
         if self._text \
             and not self._text[-1].endswith(' ') \
             and not text.startswith((',', '.', '!', '?')):
@@ -16,6 +19,9 @@ class ResponseBuilder:
         self._text.append(text)
 
     def append_tts(self, tts: str) -> None:
+        if not tts:
+            return
+
         if self._tts \
             and not self._tts[-1].endswith(' ') \
             and not tts.startswith((',', '.', '!', '?')):

@@ -1,41 +1,47 @@
-
-from dataclasses import dataclass
-from functools import lru_cache
 from types import FunctionType
 from typing import Callable
 from dialoger.handler import Handler, OtherwiseHandler, PhraseHandler, TriggerHandler
-
 from dialoger.reply import Reply
 from dialoger.input import Input
 from dialoger.response_builder import ResponseBuilder
 from dialoger.similarity_index import SimilarityIndex, similarity_index
 
 
-
-
 class Dialog:
-    _handlers: list[Handler]
     _sim_index: SimilarityIndex
-    _response_builder: ResponseBuilder
+    _handlers: list[Handler]
+    _replies: list[Reply]
     _handlers_generation: int
     _input: Input | None
+    _postproc: Callable[[list[Reply]], list[Reply]] | None
 
     def __init__(self) -> None:
         self._handlers = []
-        self._sim_index: SimilarityIndex = similarity_index
+        self._sim_index = similarity_index
         self._handlers_generation = 0
+        self._replies = []
+        self._postproc = None
 
     def handle_request(self, request: dict) -> dict:
-        self._response_builder = ResponseBuilder()
+        response_builder = ResponseBuilder()
         input = Input(request)
 
         if input.is_ping:
-            self._response_builder.append_text("Pong!")
-            self._response_builder.end_session()
+            response_builder.append_text("Pong!")
+            response_builder.end_session()
         else:
             self._generate_response(input)
 
-        return self._response_builder.build()
+        self._replies_to_response(response_builder)
+
+        return response_builder.build()
+
+    def _replies_to_response(self, response_builder: ResponseBuilder):
+        if self._postproc:
+            self._replies = self._postproc(self._replies)
+
+        for reply in self._replies:
+            reply.append_to(response_builder)
 
     def after_response(self):
         self._input = None
@@ -43,6 +49,7 @@ class Dialog:
 
     def _generate_response(self, input: Input) -> None:
         self._input = input
+        self._replies = []
 
         triggered = next((h for h in self._handlers if isinstance(h, TriggerHandler) and h.trigger(input)), None)
 
@@ -71,13 +78,13 @@ class Dialog:
 
             return
 
-        self._response_builder.append_text("Я полохо тебя слышу. Подойти поближе и повтори ещё разок.")
+        self.append_reply("Я полохо тебя слышу. Подойти поближе и повтори ещё разок.")
 
     def _update_handlers(self):
         self._handlers = [h for h in self._handlers if h.generation in (0, self._handlers_generation)]
         self._handlers_generation += 1
 
-    def append_handler(self, intent: str | Callable[[], bool] | None = None):
+    def append_handler(self, intent: str | Callable[[Input], bool] | None = None):
         def decorator(action: Callable[[], None]):
             match intent:
                 case str():
@@ -106,11 +113,16 @@ class Dialog:
         for reply in replies:
             match reply:
                 case Reply():
-                    reply.append_to(self._response_builder)
+                    self._replies.append(reply)
                 case _:
-                    Reply(reply).append_to(self._response_builder)
+                    self._replies.append(Reply(reply))
 
     def input(self) -> Input:
         assert self._input
 
         return self._input
+
+    def postproc(self, fn: Callable[[list[Reply]], list[Reply]]):
+        self._postproc = fn
+
+        return fn

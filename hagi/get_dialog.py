@@ -1,11 +1,17 @@
 from functools import lru_cache
-from dialoger import Dialog
+from dialoger import Dialog, Reply
 from hagi.append_chitchat import append_chitchat
 
 
 def _create_hagi_dialog() -> Dialog:
     dialog = Dialog()
     on, say = dialog.append_handler, dialog.append_reply
+
+    @dialog.postproc
+    def _(replies: list[Reply]) -> list[Reply]:
+        replies.insert(0, Reply(('', '<speaker effect="pitch_down">')))
+
+        return replies
 
     @on(lambda i: i.is_new_session)
     def _():
@@ -18,6 +24,10 @@ def _create_hagi_dialog() -> Dialog:
             # silence(500)
             'А теперь скажи что-нибудь.'
         )
+
+        @on("что-нибудь")
+        def _():
+            say('Хороший человечик. Скажи ещё что-нибудь')
 
     @on(lambda i: i.utterance in ('помощь', 'что ты умеешь'))
     def _():
