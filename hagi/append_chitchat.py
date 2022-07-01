@@ -130,4 +130,10 @@ def append_chitchat(dialog: Dialog) -> None:
             if changed[i] == "со" and changed[i + 1] == 'тобой':
                 changed[i] = "с"
 
-        say(" ".join(changed))
+        if changed and changed[0] == 'а':
+            changed.pop(0)
+
+        joined = " ".join(changed)
+        without_my_name = joined.replace('хаги ваги', '')
+
+        say(without_my_name)
