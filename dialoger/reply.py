@@ -15,7 +15,7 @@ class Reply:
                     self._tts.append(tts)
                 case str(part):
                     self._text.append(part)
-                    self._tts.append(part)
+                    self._tts.append(part.replace('+', ''))
                 case _:
                     raise ValueError(f'Invalid type for parts item: {part}')
 
