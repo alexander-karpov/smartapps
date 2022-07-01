@@ -11,18 +11,19 @@ class Dialog:
     _sim_index: SimilarityIndex
     _handlers: list[Handler]
     _replies: list[Reply]
-    _handlers_generation: int
+    _requests_count: int
     _input: Input | None
     _postproc: Callable[[list[Reply]], list[Reply]] | None
 
     def __init__(self) -> None:
         self._handlers = []
         self._sim_index = similarity_index
-        self._handlers_generation = 0
+        self._requests_count = 0
         self._replies = []
         self._postproc = None
 
     def handle_request(self, request: dict) -> dict:
+        self._requests_count += 1
         response_builder = ResponseBuilder()
         input = Input(request)
 
@@ -36,16 +37,16 @@ class Dialog:
 
         return response_builder.build()
 
+    def after_response(self):
+        self._input = None
+        self._sift_handlers()
+
     def _replies_to_response(self, response_builder: ResponseBuilder):
         if self._postproc:
             self._replies = self._postproc(self._replies)
 
         for reply in self._replies:
             reply.append_to(response_builder)
-
-    def after_response(self):
-        self._input = None
-        self._update_handlers()
 
     def _generate_response(self, input: Input) -> None:
         self._input = input
@@ -80,9 +81,8 @@ class Dialog:
 
         self.append_reply("Я полохо тебя слышу. Подойти поближе и повтори ещё разок.")
 
-    def _update_handlers(self):
-        self._handlers = [h for h in self._handlers if h.generation in (0, self._handlers_generation)]
-        self._handlers_generation += 1
+    def _sift_handlers(self):
+        self._handlers = [h for h in self._handlers if h.generation in (0, self._requests_count)]
 
     def append_handler(self, intent: str | Callable[[Input], bool] | None = None):
         def decorator(action: Callable[[], None]):
@@ -91,18 +91,18 @@ class Dialog:
                     self._handlers.append(PhraseHandler(
                         phrases=tuple(phrase.strip() for phrase in intent.lower().split(',')),
                         action=action,
-                        generation=self._handlers_generation,
+                        generation=self._requests_count,
                     ))
                 case FunctionType():
                     self._handlers.append(TriggerHandler(
                         trigger=intent,
                         action=action,
-                        generation=self._handlers_generation,
+                        generation=self._requests_count,
                     ))
                 case _:
                     self._handlers.append(OtherwiseHandler(
                         action=action,
-                        generation=self._handlers_generation,
+                        generation=self._requests_count,
                     ))
 
             return action
