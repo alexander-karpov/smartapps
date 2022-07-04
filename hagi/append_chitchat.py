@@ -1,7 +1,7 @@
 from dialoger import Dialog
-from dialoger.input import Input
 from hagi.morph import inflect
 from hagi.nlp import nlp
+from hagi.hagi_names import hagi_names
 
 class Word:
     @staticmethod
@@ -133,7 +133,7 @@ def append_chitchat(dialog: Dialog) -> None:
         if changed and changed[0] == 'а':
             changed.pop(0)
 
-        joined = " ".join(changed)
-        without_my_name = joined.replace('хаги ваги', '')
+        without_hagi_name = [word for word in changed if word not in hagi_names]
+        joined = " ".join(without_hagi_name or changed)
 
-        say(without_my_name)
+        say(joined)

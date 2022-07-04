@@ -1,5 +1,5 @@
 from types import FunctionType
-from typing import Callable
+from typing import Callable, Iterable
 from dialoger.handler import Handler, OtherwiseHandler, PhraseHandler, TriggerHandler
 from dialoger.reply import Reply
 from dialoger.input import Input
@@ -13,14 +13,16 @@ class Dialog:
     _replies: list[Reply]
     _requests_count: int
     _input: Input | None
-    _postproc: Callable[[list[Reply]], list[Reply]] | None
+    _postproc_replies: Callable[[list[Reply]], list[Reply]] | None
+    _stopwords: frozenset[str]
 
     def __init__(self) -> None:
         self._handlers = []
         self._sim_index = similarity_index
         self._requests_count = 0
         self._replies = []
-        self._postproc = None
+        self._postproc_replies = None
+        self._stopwords = frozenset()
 
     def handle_request(self, request: dict) -> dict:
         self._requests_count += 1
@@ -39,16 +41,63 @@ class Dialog:
 
     def after_response(self):
         self._input = None
-        self._sift_handlers()
+        self._drop_outdated_handlers()
+        self._warmup_sim_index()
+
+    def append_handler(self, *intent: str, trigger: Callable[[Input], bool] | None = None):
+        def decorator(action: Callable[[], None]):
+            if len(intent):
+                self._handlers.append(PhraseHandler(
+                    phrases=tuple(phrase for phrase in intent if phrase not in self._stopwords),
+                    action=action,
+                    generation=self._requests_count,
+                ))
+
+            elif trigger:
+                self._handlers.append(TriggerHandler(
+                    trigger=trigger,
+                    action=action,
+                    generation=self._requests_count,
+                ))
+            else:
+                self._handlers.append(OtherwiseHandler(
+                    action=action,
+                    generation=self._requests_count,
+                ))
+
+            return action
+
+        return decorator
+
+    def append_reply(self, *replies: str | tuple[str,str] | Reply ):
+        for reply in replies:
+            match reply:
+                case Reply():
+                    self._replies.append(reply)
+                case _:
+                    self._replies.append(Reply(reply))
+
+    def input(self) -> Input:
+        assert self._input
+
+        return self._input
+
+    def postproc_replies(self, fn: Callable[[list[Reply]], list[Reply]]):
+        self._postproc_replies = fn
+
+        return fn
 
     def _replies_to_response(self, response_builder: ResponseBuilder):
-        if self._postproc:
-            self._replies = self._postproc(self._replies)
+        if self._postproc_replies:
+            self._replies = self._postproc_replies(self._replies)
 
         for reply in self._replies:
             reply.append_to(response_builder)
 
     def _generate_response(self, input: Input) -> None:
+        """
+        Выбор и выполнение хендлера
+        """
         self._input = input
         self._replies = []
 
@@ -81,48 +130,21 @@ class Dialog:
 
         self.append_reply("Я полохо тебя слышу. Подойти поближе и повтори ещё разок.")
 
-    def _sift_handlers(self):
+    def _drop_outdated_handlers(self):
+        """
+        Отбрасывает неактуальные обработчики
+        """
         self._handlers = [h for h in self._handlers if h.generation in (0, self._requests_count)]
 
-    def append_handler(self, intent: str | Callable[[Input], bool] | None = None):
-        def decorator(action: Callable[[], None]):
-            match intent:
-                case str():
-                    self._handlers.append(PhraseHandler(
-                        phrases=tuple(phrase.strip() for phrase in intent.lower().split(',')),
-                        action=action,
-                        generation=self._requests_count,
-                    ))
-                case FunctionType():
-                    self._handlers.append(TriggerHandler(
-                        trigger=intent,
-                        action=action,
-                        generation=self._requests_count,
-                    ))
-                case _:
-                    self._handlers.append(OtherwiseHandler(
-                        action=action,
-                        generation=self._requests_count,
-                    ))
+    def _warmup_sim_index(self):
+        """
+        Энкодер может работать достаточно долго
+        Так что переносим его работу на фазу после ответа
+        """
+        for h in self._handlers:
+            match h:
+                case PhraseHandler(phrases=p):
+                    self._sim_index.add(p)
 
-            return action
-
-        return decorator
-
-    def append_reply(self, *replies: str | tuple[str,str] | Reply ):
-        for reply in replies:
-            match reply:
-                case Reply():
-                    self._replies.append(reply)
-                case _:
-                    self._replies.append(Reply(reply))
-
-    def input(self) -> Input:
-        assert self._input
-
-        return self._input
-
-    def postproc(self, fn: Callable[[list[Reply]], list[Reply]]):
-        self._postproc = fn
-
-        return fn
+    def set_stopwords(self, words: Iterable[str]):
+        self._stopwords = frozenset(words)

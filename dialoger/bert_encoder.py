@@ -25,4 +25,4 @@ class BertEncoder:
         return embeddings.cpu().numpy()
 
 
-bert_encoder = BertEncoder("cointegrated/rubert-tiny2")
+bert_encoder = BertEncoder("cointegrated/LaBSE-en-ru")

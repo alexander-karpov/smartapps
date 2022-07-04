@@ -34,7 +34,7 @@ class SimilarityIndex:
 
         return I[np.argsort(1 - D)]
 
-    def most_similar(self, intents: list[tuple[str, ...]], text: str, range = 0.88) -> int | None:
+    def most_similar(self, intents: list[tuple[str, ...]], text: str, range = 0.80) -> int | None:
         intent_to_ids = [self.add(phrases) for phrases in intents]
         nearest = list(self.search(text, range))
 
@@ -51,4 +51,4 @@ class SimilarityIndex:
 
         return None
 
-similarity_index = SimilarityIndex(bert_encoder, 312)
+similarity_index = SimilarityIndex(bert_encoder, 768)
