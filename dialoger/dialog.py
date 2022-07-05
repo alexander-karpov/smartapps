@@ -110,10 +110,12 @@ class Dialog:
 
         phrased = [h for h in self._handlers if isinstance(h, PhraseHandler)]
 
-        if phrased and input.utterance:
+        if phrased and input.tokens:
+            without_stopwords = ' '.join(t for t in input.tokens if t not in self._stopwords)
+
             most_similar = self._sim_index.most_similar(
                 intents=[h.phrases for h in phrased],
-                text=input.utterance
+                text=without_stopwords
             )
 
             if most_similar is not None:
