@@ -42,7 +42,7 @@ def append_lets_play(dialog: Dialog) -> None:
 def _append_plays(dialog: Dialog):
     on, say = dialog.append_handler, dialog.append_reply
     # догонялки
-    @on('в догонялки', 'догони меня')
+    @on('в догонялки', 'догони меня', 'давай догоняй меня все равно не догонишь')
     def _():
         say(random.choice((
             'Ты не сможешь убижать от Х+аги В+аги.',
