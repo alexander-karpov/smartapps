@@ -134,6 +134,6 @@ def append_chitchat(dialog: Dialog) -> None:
             changed.pop(0)
 
         without_hagi_name = [word for word in changed if word not in hagi_names]
-        joined = " ".join(without_hagi_name or changed)
+        joined = " ".join(without_hagi_name or changed) + '.'
 
         say(joined)

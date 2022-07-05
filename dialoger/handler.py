@@ -1,4 +1,3 @@
-
 from dataclasses import dataclass
 from typing import Callable
 from dialoger.input import Input
@@ -11,7 +10,7 @@ class Handler:
 
 
 @dataclass
-class PhraseHandler(Handler):
+class IntentHandler(Handler):
     phrases: tuple[str, ...]
 
 
@@ -22,4 +21,8 @@ class TriggerHandler(Handler):
 
 @dataclass
 class OtherwiseHandler(Handler):
+    pass
+
+@dataclass
+class PromptHandler(Handler):
     pass

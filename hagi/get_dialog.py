@@ -10,7 +10,7 @@ from hagi.hagi_names import hagi_names
 
 def _create_hagi_dialog() -> Dialog:
     dialog = Dialog()
-    on, say, input = dialog.append_handler, dialog.append_reply, dialog.input
+    on, say, prompt, input = dialog.append_handler, dialog.append_reply, dialog.append_prompt, dialog.input
 
     @dialog.postproc_replies
     def _(replies: list[Reply]) -> list[Reply]:
@@ -25,10 +25,23 @@ def _create_hagi_dialog() -> Dialog:
 
     @on('привет', 'здорова', 'здравтвуйте', 'добрый день', 'доброе утро')
     def _():
-        say('Привет, человечик')
+        say('Привет, человечик.')
 
-    @on('как дела', 'как у тебя дела', 'что ты сейчас делаешь', 'что делаешь', 'как ты себя чувствуешь')
+    @prompt()
     def _():
+        say(random.choice((
+            'Сказать тебе как у меня дела?',
+            'Хочешь расскажу, что я сейчас делаю?',
+            'Рассказать, что я думаю?',
+        )))
+
+        on('да','хочу', 'давай',  'расскажи')(
+            how_are_you
+        )
+
+    @on('как дела', 'как у тебя дела', 'что ты сейчас делаешь', 'что ты думаешь', 'что делаешь', 'как ты себя чувствуешь')
+    def how_are_you():
+        # ackunolage короче не выводить после промпта
         if random.choice((1, 1, 0)):
             say(random.choice((
                 'Хочешь знать как я поживаю?',
@@ -81,6 +94,7 @@ def _create_hagi_dialog() -> Dialog:
         'это ты какашка',
         'ты сука ебаная',
         'урод',
+        'потому что ты козел',
     )
     def _():
         if 'ты' in input().tokens:
@@ -100,13 +114,13 @@ def _create_hagi_dialog() -> Dialog:
 
         without_name = ['ты' if word in hagi_names else word for word in input().tokens]
 
-        if without_name and without_name[0] == 'а':
+        if without_name and without_name[0] in ['а', 'потому', 'что']:
             without_name.pop(0)
 
         joined = ' '.join(without_name)
         without_ty = joined.replace('ты ты', 'ты')
 
-        say(without_ty)
+        say(without_ty + '.')
 
     append_lets_play(dialog)
 
@@ -151,6 +165,19 @@ def _create_hagi_dialog() -> Dialog:
             'Х+аги В+аги чувствует человечков. Чувствует их запах. Ням-ням',
         )))
 
+
+    @prompt()
+    def _():
+        say(random.choice((
+            'А хочешь знать кто я такой?',
+            'Хочешь расскажу свою историю?',
+            'Рассказать как я стал таким?',
+        )))
+
+        on('да','хочу', 'давай',  'расскажи')(
+            who_are_you
+        )
+
     @on(
         'скажи кто такой ты',
         'ты кто вообще',
@@ -159,7 +186,7 @@ def _create_hagi_dialog() -> Dialog:
         'расскажи свою историю',
         'расскажи историю почему ты стал живым',
     )
-    def _():
+    def who_are_you():
         if random.choice((1, 1, 0)):
             say(random.choice((
                 'Хочешь знать про меня?',
@@ -167,15 +194,15 @@ def _create_hagi_dialog() -> Dialog:
             )))
 
         say(random.choice((
-            'Х+аги – кукла из игры.',
+            'Я – Х+аги, меня сделали чтобы обниматься.',
             'Я кукла из игры. Я был мягкий и добрый.',
-            'У меня большие руки чтобы обнимать.',
+            'У меня большие руки. Я обнимал человечков.',
             'Я синий и мягкий. Я был хорошим.',
         )))
 
         say(random.choice((
-            'Потом начались эксперименты.',
-            'Но им не нужен был хороиший Х+аги.',
+            'Но потом начались эксперименты.',
+            'Но им не нужен был хороший Х+аги.',
             'Они хотели сделать меня плохим. Но у них не получилось.',
         )))
 
@@ -230,7 +257,7 @@ def _create_hagi_dialog() -> Dialog:
             'Я выхожу только покушать',
         )))
 
-    @on('у меня есть ты игрушка')
+    @on('у меня есть ты игрушка', 'у меня плюшевая игрушка')
     def _():
         say(random.choice((
             'Раньше я был игрушкой.',
@@ -248,7 +275,7 @@ def _create_hagi_dialog() -> Dialog:
             'Сейчас я прячусь в тёмных местах.',
         )))
 
-    @on('а ты где живешь')
+    @on('а ты где живешь', 'ответь мне пожалуйста на вопрос ты где сейчас находишься')
     def _():
         say(random.choice((
             'Раньше я жил с людьми. Они меня не боялись.',
@@ -292,7 +319,7 @@ def _create_hagi_dialog() -> Dialog:
         )))
 
     # скажи где находится твоя фабрика игрушек
-
+    # скажи что ты ешь
     append_chitchat(dialog)
 
     return dialog

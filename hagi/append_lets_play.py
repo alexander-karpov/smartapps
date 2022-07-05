@@ -2,7 +2,19 @@ from dialoger import Dialog
 import random
 
 def append_lets_play(dialog: Dialog) -> None:
-    on, say = dialog.append_handler, dialog.append_reply
+    on, say, prompt = dialog.append_handler, dialog.append_reply, dialog.append_prompt
+
+    @prompt()
+    def _():
+        say(random.choice((
+            'А хочешь со мной поиграть?',
+            'Давай лучше поиграем.',
+            'Я хочу поиграть.',
+        )))
+
+        on('да','хочу','давай', 'во что', 'во что будем играть')(
+            lets_play
+        )
 
     @on(
         'давай играть',
@@ -12,7 +24,7 @@ def append_lets_play(dialog: Dialog) -> None:
         'какие игры ты любишь играть',
         'давай поиграем в игру кальмары',
     )
-    def _():
+    def lets_play():
         say(random.choice((
             'Я люблю играть в догонялки и в прятки.',
             'Х+аги В+аги хорошо прячется и догоняет человечков.',
@@ -24,22 +36,22 @@ def append_lets_play(dialog: Dialog) -> None:
             'Поиграем в догонялки или в прятки?',
         )))
 
-        _append_plays(dialog)
+        _append_games(dialog)
 
         @on('давай играть', 'начинаем игру')
         def _():
             say('В догонялки или в прятки?')
 
-            _append_plays(dialog)
+            _append_games(dialog)
 
         @on()
         def _():
             say('Х+аги В+аги играет только в догонялки и в прятки. Выбирай')
 
-            _append_plays(dialog)
+            _append_games(dialog)
 
 
-def _append_plays(dialog: Dialog):
+def _append_games(dialog: Dialog):
     on, say = dialog.append_handler, dialog.append_reply
     # догонялки
     @on('в догонялки', 'догони меня', 'давай догоняй меня все равно не догонишь')
@@ -74,7 +86,7 @@ def _append_plays(dialog: Dialog):
     def _():
         say(random.choice((
             'Х+аги В+аги чуит человечков.',
-            'Ещё никто не спрятался.',
+            'Ещё никто не спрятался от меня.',
             'Я так люблю искать человечков. Ням-ням.',
             'Это моя любимая игра когда хочется кушать.',
         )))
