@@ -2,6 +2,7 @@ from functools import lru_cache
 import random
 from dialoger import Dialog, Reply
 from hagi.append_chitchat import append_chitchat
+from hagi.append_lets_play import append_lets_play
 from hagi.hagi_names import hagi_names
 
 
@@ -87,23 +88,7 @@ def _create_hagi_dialog() -> Dialog:
             'Давай играть? Я дорогяю. Ням-ням',
         )))
 
-
-    @on('какие игры ты любишь играть', 'давай играть', 'хочешь поиграть', 'я хочу с тобой поиграть', 'давай поиграем в игру кальмары')
-    def _():
-        say('Я люблю играть с человечками в догонялки и в прятки')
-
-        @on('в догонялки', 'догони меня')
-        def _():
-            say('Я догнал тебя. Ам!')
-
-        @on('в прятки', 'я спрятался', 'попробуй найди меня')
-        def _():
-            say('Я нашёл тебя. Ам!')
-
-        @on()
-        def _():
-            say('Я не знаю такую игру')
-
+    append_lets_play(dialog)
 
     @on('ты ко мне приходи домой', 'приходи у нас сегодня картошечка будет')
     def _():
