@@ -11,7 +11,7 @@ from hagi.hagi_names import hagi_names
 
 
 def _create_hagi_dialog() -> Dialog:
-    dialog = Dialog()
+    dialog = Dialog(stopwords=hagi_names)
     on, say, prompt, input = dialog.append_handler, dialog.append_reply, dialog.append_prompt, dialog.input
 
     @dialog.postproc_replies
@@ -19,8 +19,6 @@ def _create_hagi_dialog() -> Dialog:
         replies.insert(0, Reply(('', '<speaker effect="pitch_down">')))
 
         return replies
-
-    dialog.set_stopwords(hagi_names)
 
     append_greating(dialog)
     append_help(dialog)

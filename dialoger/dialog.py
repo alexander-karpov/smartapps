@@ -15,13 +15,13 @@ class Dialog:
     _postproc_replies: Callable[[list[Reply]], list[Reply]] | None
     _stopwords: frozenset[str]
 
-    def __init__(self) -> None:
+    def __init__(self, *, stopwords: Iterable[str] = []) -> None:
         self._handlers = []
         self._sim_index = similarity_index
         self._generation = 0
         self._replies = []
         self._postproc_replies = None
-        self._stopwords = frozenset()
+        self._stopwords = frozenset(stopwords)
 
     # Dialog flow API
     # ---------------
@@ -198,6 +198,3 @@ class Dialog:
             match h:
                 case IntentHandler(phrases=p):
                     self._sim_index.add(p)
-
-    def set_stopwords(self, words: Iterable[str]):
-        self._stopwords = frozenset(words)
