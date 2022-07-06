@@ -3,10 +3,12 @@ from dialoger.response_builder import ResponseBuilder
 class Reply:
     _text: list[str]
     _tts: list[str]
+    _end: bool
 
-    def __init__(self, *parts: str | tuple[str,str]) -> None:
+    def __init__(self, *parts: str | tuple[str,str], end:bool = False) -> None:
         self._text = []
         self._tts = []
+        self._end = end
 
         for  part in parts:
             match part:
@@ -25,3 +27,6 @@ class Reply:
 
         for t in self._tts:
             response_builder.append_tts(t)
+
+        if self._end:
+            response_builder.end_session()

@@ -26,6 +26,16 @@ def _create_hagi_dialog() -> Dialog:
     append_how_are_you(dialog)
     append_who_are_you(dialog)
 
+    @on(trigger=lambda i: i.utterance == 'выход')
+    def _():
+        say(random.choice((
+            'Сегодня я отпускаю тебя. Но не радуйся сильно.',
+            'На этот раз тебе удалось убежать. Но мы ещё поиграем.',
+            'Уходи. Но помни, ночью не закрывай глаза!',
+        )))
+
+        say(Reply(end=True))
+
     @on('привет', 'здорова', 'здравтвуйте', 'добрый день', 'доброе утро')
     def _():
         say('Привет, человечик.')
