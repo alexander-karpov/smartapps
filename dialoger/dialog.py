@@ -1,4 +1,5 @@
-from typing import Callable, Iterable
+import random
+from typing import Callable, Iterable, overload
 from dialoger.handler import Handler, OtherwiseHandler, IntentHandler, TriggerHandler, PromptHandler
 from dialoger.reply import Reply
 from dialoger.input import Input
@@ -26,11 +27,23 @@ class Dialog:
     # Dialog flow API
     # ---------------
 
-    def append_handler(self, *intent: str, trigger: Callable[[Input], bool] | None = None):
+    def append_handler(self,
+        *intent: str,
+        trigger: Callable[[Input], bool] | None = None,
+        yes: bool = False
+    ):
         def decorator(action: Callable[[], None]):
-            if len(intent):
+            assert not (trigger and intent), 'Параметры trigger и примеры фраз несовместимы'
+            assert not (trigger and yes), 'Параметры trigger и yes несовместимы'
+
+            if len(intent) or yes:
+                phrases = intent
+
+                if yes:
+                    phrases = phrases + ('да', 'давай', 'хочу', 'буду', 'хорошо', 'согласен')
+
                 self._handlers.append(IntentHandler(
-                    phrases=tuple(phrase for phrase in intent if phrase not in self._stopwords),
+                    phrases=phrases,
                     action=action,
                     generation=self._generation,
                 ))
@@ -59,7 +72,6 @@ class Dialog:
                 case _:
                     self._replies.append(Reply(reply))
 
-
     def append_prompt(self):
         def decorator(action: Callable[[], None]):
             self._handlers.append(PromptHandler(
@@ -70,6 +82,16 @@ class Dialog:
             return action
 
         return decorator
+
+    def input(self) -> Input:
+        assert self._input
+
+        return self._input
+
+    def postproc_replies(self, fn: Callable[[list[Reply]], list[Reply]]):
+        self._postproc_replies = fn
+
+        return fn
 
     # Server API
     # ----------
@@ -97,16 +119,6 @@ class Dialog:
 
     # Implementation
     # --------------
-
-    def input(self) -> Input:
-        assert self._input
-
-        return self._input
-
-    def postproc_replies(self, fn: Callable[[list[Reply]], list[Reply]]):
-        self._postproc_replies = fn
-
-        return fn
 
     def _replies_to_response(self, response_builder: ResponseBuilder):
         if self._postproc_replies:
@@ -176,12 +188,16 @@ class Dialog:
         if has_new_handlers:
             return
 
-        for h in reversed(self._handlers):
-            if isinstance(h, PromptHandler):
-                self._handlers.remove(h)
-                h.action()
+        prompts = [h for h in self._handlers if isinstance(h, PromptHandler)]
 
-                break
+        if not prompts:
+            return
+
+        random.shuffle(prompts)
+        prompts.sort(key=lambda h: -h.generation)
+
+        prompts[0].action()
+        self._handlers.remove(prompts[0])
 
     def _drop_outdated_handlers(self):
         """

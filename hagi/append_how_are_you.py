@@ -12,7 +12,7 @@ def append_how_are_you(dialog: Dialog) -> None:
             'Рассказать, что я думаю?',
         )))
 
-        on('да','хочу', 'давай',  'расскажи')(
+        on('расскажи', yes=True)(
             how_are_you
         )
 
