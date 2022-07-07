@@ -14,7 +14,7 @@ class Input:
 
     @property
     def utterance(self) -> str:
-       return self._request["request"]["original_utterance"]
+       return self._request["request"]["command"]
 
     @property
     def is_ping(self) -> bool:
