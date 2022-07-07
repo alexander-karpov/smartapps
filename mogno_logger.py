@@ -22,5 +22,6 @@ class MognoLogger:
             'session_id': request['session']['session_id'],
             'response': response['response']['text'][:64],
             'time': math.ceil(time.time()*1000),
-            'version': 3,
+            'screen': request['meta']['interfaces']['screen'] is not None,
+            'version': 4,
         })
