@@ -1,11 +1,13 @@
 class ResponseBuilder:
     _text: list[str]
     _tts: list[str]
+    _images: list[str]
     _end_session: bool = False
 
     def __init__(self) -> None:
         self._text = []
         self._tts = []
+        self._images = []
 
     def append_text(self, text: str) -> None:
         if not text:
@@ -29,14 +31,24 @@ class ResponseBuilder:
 
         self._tts.append(tts)
 
+    def append_image(self, image_id: str) -> None:
+        self._images.append(image_id)
+
     def end_session(self) -> None:
         self._end_session = True
 
     def build(self) -> dict:
         text = ''.join(self._text)[0:1024]
         tts = ''.join(self._tts)[0:1024]
+        card = None
+
+        if self._images:
+            card = {
+                "type": "ImageGallery",
+                "items": [{ "image_id": id } for id in self._images]
+            }
 
         return {
-            'response': { 'text': text, 'tts': tts, 'end_session': self._end_session },
+            'response': { 'text': text, 'tts': tts, 'end_session': self._end_session, "card": card },
             'version': '1.0'
         }
