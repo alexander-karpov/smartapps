@@ -1,31 +1,28 @@
-import io
 import os
+import io
+import asyncio
 from PIL.Image import Image
-from requests import Session, Request
+import httpx
 
-s = Session()
+class ImageUploader:
+    _cache: dict[str, str]
 
-s.headers.update({"Authorization": f"OAuth {os.environ['DIALOGS_OAUTH']}"})
+    def __init__(self) -> None:
+        self._cache = {}
 
-def upload(file: bytes):
-    dialoder_renderer_skill_id = "75c022e8-3076-4b92-90c8-44ab38d29950"
+    async def upload(self, images: list[Image]):
+        dialoder_renderer_skill_id = "75c022e8-3076-4b92-90c8-44ab38d29950"
+        base_url = f"https://dialogs.yandex.net/api/v1/skills/{dialoder_renderer_skill_id}/images"
+        headers = {"Authorization": f"OAuth {os.environ['DIALOGS_OAUTH']}"}
 
-    resp = s.post(f"https://dialogs.yandex.net/api/v1/skills/{dialoder_renderer_skill_id}/images", files={'file': file})
+        async with httpx.AsyncClient(headers=headers, base_url=base_url) as client:
+            responses = await asyncio.gather(
+                *(client.post('', files={'file': self._image_to_file(i)}) for i in images)
+            )
 
+            return [r.json() for r in responses]
 
-
-    # resp = s.send(prepped,
-    #     # stream=stream,
-    #     # verify=verify,
-    #     # proxies=proxies,
-    #     # cert=cert,
-    #     # timeout=timeout
-    # )
-    resp_json = resp.json()
-    resp.close()
-
-    if "image" not in resp_json:
-        print(resp_json)
-        return "Error"
-
-    return resp.json()["image"]
+    def _image_to_file(self, image: Image) -> bytes:
+        with io.BytesIO() as output:
+            image.save(output, format="PNG")
+            return output.getvalue()

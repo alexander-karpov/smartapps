@@ -1,6 +1,7 @@
 import io
 import os
 from typing import Literal, TypeAlias
+import PIL
 from PIL.Image import Image, open as open_image, new as new_image, Resampling
 import random
 import base64
@@ -39,12 +40,12 @@ class GameObject():
 #     def position() -> Vector2:
 
 
-beast = GameObject(open_image("./sprites/beast.png"), (200, 0))
+beast = GameObject(PIL.ImageOps.invert(open_image("./sprites/beast.png").convert("1")), (200, 0))
 beast_speed = (random.random() * 1) + 1
 beast_dir = 1
 beast_accel = 1
-hunter = GameObject(open_image("./sprites/hunter_x.png"), (0, 0))
-shot = GameObject(new_image("RGBA", ((328 // 2) // 5, 1), (255,0,0,255)), (0, 0))
+hunter = GameObject(PIL.ImageOps.invert(open_image("./sprites/hunter_x.png").convert("1")), (0, 0))
+shot = GameObject(new_image("1", ((328 // 2) // 5, 1), (1)), (0, 0))
 
 
 def shoot(d) -> None:
@@ -70,16 +71,15 @@ def update():
 class Renderer():
     _bg_color = (225, 218, 197, 255)
     _screen_size = ((328 // 2) * 3, 480 // 2)
-    _border: Image
 
-    def __init__(self) -> None:
-        self._border = new_image("RGBA", (1, self._screen_size[1]), (0,0,0,255))
+    def render(self, *, debug: bool = False) -> list[Image]:
+        frame = new_image("1", self._screen_size, (0))
 
-    def render(self) -> Image:
-        frame = new_image("RGBA", self._screen_size, self._bg_color)
+        if debug:
+            border = new_image("1", (1, self._screen_size[1]), (1))
 
-        for x in range(2):
-            frame.paste(self._border, ((x + 1) * (328 // 2), 0), self._border)
+            for x in range(2):
+                frame.paste(border, ((x + 1) * (328 // 2), 0), border)
 
         for o in [beast, hunter, shot]:
             # pos = (
@@ -92,10 +92,17 @@ class Renderer():
                 -o.position[1] + self._screen_size[1] - o.sptire.size[1],
             )
 
-            frame.paste(o.sptire, pos, o.sptire)
+            frame.paste(o.sptire, pos)
 
 
-        return frame.resize(tuple(d*2 for d in frame.size), Resampling.NEAREST)
+        white_frame = PIL.ImageOps.invert(frame)
+        big_frame = white_frame.resize(tuple(d*2 for d in white_frame.size), Resampling.NEAREST)
+        l_frame = big_frame.convert("L") # иначе не сохранить в хранилище
+
+        if debug:
+            return l_frame  # type: ignore
+
+        return [l_frame.crop((i*328, 0, (i+1)*328, 480)) for i in range(3)]
 
 
 
