@@ -1,5 +1,5 @@
 import json
-from hagi import get_dialog
+from typing import Literal
 from db import db
 from mogno_logger import MognoLogger
 
@@ -11,8 +11,18 @@ async def app(scope, receive, send):
     assert scope['method'] == 'POST'
 
     request = json.loads(await read_body(receive))
-    dialog = get_dialog(request["session"]["session_id"])
-    response = dialog.handle_request(request)
+
+    match detect_app(request):
+        case "hagi":
+            from hagi import get_dialog
+            dialog = get_dialog(request["session"]["session_id"])
+        case "hunter":
+            from hunter import get_dialog
+            dialog = get_dialog(request["session"]["session_id"])
+
+    assert dialog, 'Хоть один диалог выбран'
+
+    response = await dialog.handle_request(request)
 
     await send({
         'type': 'http.response.start',
@@ -43,3 +53,10 @@ async def read_body(receive):
         more_body = message.get('more_body', False)
 
     return body
+
+
+def detect_app(request) ->  Literal["hunter"] | Literal["hagi"]:
+    if request["session"]["skill_id"] == '69eedbaf-4ac3-4df9-9381-fd9b3a66b67c':
+        return 'hunter'
+
+    return 'hagi'

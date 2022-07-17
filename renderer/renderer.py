@@ -1,7 +1,7 @@
-import io
+import sys
 import os
-from typing import Literal, TypeAlias
-import PIL
+from typing import TypeAlias
+import PIL.ImageOps
 from PIL.Image import Image, open as open_image, new as new_image, Resampling
 import random
 import base64
@@ -40,11 +40,11 @@ class GameObject():
 #     def position() -> Vector2:
 
 
-beast = GameObject(PIL.ImageOps.invert(open_image("./sprites/beast.png").convert("1")), (200, 0))
+beast = GameObject(PIL.ImageOps.invert(open_image(os.path.join(os.path.dirname(__file__), "sprites/beast.png")).convert("1")), (200, 0))
 beast_speed = (random.random() * 1) + 1
 beast_dir = 1
 beast_accel = 1
-hunter = GameObject(PIL.ImageOps.invert(open_image("./sprites/hunter_x.png").convert("1")), (0, 0))
+hunter = GameObject(PIL.ImageOps.invert(open_image(os.path.join(os.path.dirname(__file__), "sprites/hunter_x.png")).convert("1")), (0, 0))
 shot = GameObject(new_image("1", ((328 // 2) // 5, 1), (1)), (0, 0))
 
 

@@ -4,13 +4,13 @@ import asyncio
 from PIL.Image import Image
 import httpx
 
-class ImageUploader:
+class ImagesUploader:
     _cache: dict[str, str]
 
     def __init__(self) -> None:
         self._cache = {}
 
-    async def upload(self, images: list[Image]):
+    async def upload(self, images: list[Image]) -> list[str]:
         dialoder_renderer_skill_id = "75c022e8-3076-4b92-90c8-44ab38d29950"
         base_url = f"https://dialogs.yandex.net/api/v1/skills/{dialoder_renderer_skill_id}/images"
         headers = {"Authorization": f"OAuth {os.environ['DIALOGS_OAUTH']}"}
@@ -20,7 +20,9 @@ class ImageUploader:
                 *(client.post('', files={'file': self._image_to_file(i)}) for i in images)
             )
 
-            return [r.json() for r in responses]
+            return [r.json()['image']['id'] for r in responses]
+
+        return []
 
     def _image_to_file(self, image: Image) -> bytes:
         with io.BytesIO() as output:

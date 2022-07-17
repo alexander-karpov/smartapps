@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from typing import Callable
+from typing import Any, Callable, Coroutine
 from dialoger.input import Input
 
 
 @dataclass
 class Handler:
-    action: Callable[[], None]
+    action: Callable[[], Coroutine[Any, Any, None]]
     generation: int
 
 

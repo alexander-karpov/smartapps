@@ -1,7 +1,7 @@
 import random
-from typing import Callable, Iterable, overload
+from typing import Any, Callable, Coroutine, Iterable
 from dialoger.handler import Handler, OtherwiseHandler, IntentHandler, TriggerHandler, PromptHandler
-from dialoger.reply import Reply
+from dialoger.reply import Reply, TextReply
 from dialoger.input import Input
 from dialoger.response_builder import ResponseBuilder
 from dialoger.similarity_index import SimilarityIndex, similarity_index
@@ -32,7 +32,7 @@ class Dialog:
         trigger: Callable[[Input], bool] | None = None,
         yes: bool = False
     ):
-        def decorator(action: Callable[[], None]):
+        def decorator(action: Callable[[], Coroutine[Any, Any, None]]):
             assert not (trigger and intent), 'Параметры trigger и примеры фраз несовместимы'
             assert not (trigger and yes), 'Параметры trigger и yes несовместимы'
 
@@ -64,16 +64,16 @@ class Dialog:
 
         return decorator
 
-    def append_reply(self, *replies: str | tuple[str,str] | Reply ):
+    def append_reply(self, *replies: Reply | str | tuple[str,str]):
         for reply in replies:
             match reply:
                 case Reply():
                     self._replies.append(reply)
                 case _:
-                    self._replies.append(Reply(reply))
+                    self._replies.append(TextReply(reply))
 
     def append_prompt(self):
-        def decorator(action: Callable[[], None]):
+        def decorator(action: Callable[[], Coroutine[Any, Any, None]]):
             self._handlers.append(PromptHandler(
                 action=action,
                 generation=self._generation,
@@ -96,7 +96,7 @@ class Dialog:
     # Server API
     # ----------
 
-    def handle_request(self, request: dict) -> dict:
+    async def handle_request(self, request: dict) -> dict:
         self._generation += 1
         response_builder = ResponseBuilder()
         input = Input(request)
@@ -105,7 +105,7 @@ class Dialog:
             response_builder.append_text("Pong!")
             response_builder.end_session()
         else:
-            self._generate_response(input)
+            await self._generate_response(input)
 
         self._replies_to_response(response_builder)
 
@@ -127,31 +127,31 @@ class Dialog:
         for reply in self._replies:
             reply.append_to(response_builder)
 
-    def _generate_response(self, input: Input) -> None:
+    async def _generate_response(self, input: Input) -> None:
         """
         Выбор и выполнение хендлера
         """
         self._input = input
 
-        _ = self._handle_by_triggers(input) or \
-            self._handle_by_intents(input) or \
-            self._handle_by_otherwise()
+        _ = await self._handle_by_triggers(input) or \
+            await self._handle_by_intents(input) or \
+            await self._handle_by_otherwise()
 
-        self._apply_prompts()
+        await self._apply_prompts()
 
         if not self._replies:
             self.append_reply("Я тебя полохо слышу. Подойти ближе.")
 
-    def _handle_by_triggers(self, input: Input) -> bool:
+    async def _handle_by_triggers(self, input: Input) -> bool:
         for h in reversed(self._handlers):
             if isinstance(h, TriggerHandler) and h.trigger(input):
-                h.action()
+                await h.action()
 
                 return True
 
         return False
 
-    def _handle_by_intents(self, input: Input) -> bool:
+    async def _handle_by_intents(self, input: Input) -> bool:
         intent_handlers = [h for h in self._handlers if isinstance(h, IntentHandler)]
         without_stopwords = ' '.join(t for t in input.tokens if t not in self._stopwords)
 
@@ -166,20 +166,20 @@ class Dialog:
         if most_similar is None:
             return False
 
-        intent_handlers[most_similar].action()
+        await intent_handlers[most_similar].action()
 
         return True
 
-    def _handle_by_otherwise(self) -> bool:
+    async def _handle_by_otherwise(self) -> bool:
         for h in reversed(self._handlers):
             if isinstance(h, OtherwiseHandler):
-                h.action()
+                await h.action()
 
                 return True
 
         return False
 
-    def _apply_prompts(self):
+    async def _apply_prompts(self):
         if self._generation % 4 != 0:
             return
 
@@ -196,7 +196,7 @@ class Dialog:
         random.shuffle(prompts)
         prompts.sort(key=lambda h: -h.generation)
 
-        prompts[0].action()
+        await prompts[0].action()
         self._handlers.remove(prompts[0])
 
     def _drop_outdated_handlers(self):

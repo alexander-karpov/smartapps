@@ -1,6 +1,6 @@
 from functools import lru_cache
 import random
-from dialoger import Dialog, Reply
+from dialoger import Dialog, TextReply
 from hagi.append_help import append_help
 from hagi.append_greating import append_greating
 from hagi.append_chitchat import append_chitchat
@@ -15,8 +15,8 @@ def _create_hagi_dialog() -> Dialog:
     on, say, prompt, input = dialog.append_handler, dialog.append_reply, dialog.append_prompt, dialog.input
 
     @dialog.postproc_replies
-    def _(replies: list[Reply]) -> list[Reply]:
-        replies.insert(0, Reply(('', '<speaker effect="pitch_down">')))
+    def _(replies: list[TextReply]) -> list[TextReply]:
+        replies.insert(0, TextReply(('', '<speaker effect="pitch_down">')))
 
         return replies
 
@@ -34,7 +34,7 @@ def _create_hagi_dialog() -> Dialog:
             'Уходи. Но помни, ночью не закрывай глаза!',
         )))
 
-        say(Reply(end=True))
+        say(TextReply(end=True))
 
     @on('привет', 'здорова', 'здравтвуйте', 'добрый день', 'доброе утро')
     def _():

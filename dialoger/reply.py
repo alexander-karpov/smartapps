@@ -1,6 +1,14 @@
+from abc import ABC, abstractmethod
+from typing import Iterable
 from dialoger.response_builder import ResponseBuilder
 
-class Reply:
+
+class Reply(ABC):
+    @abstractmethod
+    def append_to(self, response_builder: ResponseBuilder) -> None: ...
+
+
+class TextReply(Reply):
     _text: list[str]
     _tts: list[str]
     _end: bool
@@ -30,3 +38,14 @@ class Reply:
 
         if self._end:
             response_builder.end_session()
+
+
+class ImagesReply(Reply):
+    _images: Iterable[str]
+
+    def __init__(self, images: Iterable[str]) -> None:
+        self._images = images
+
+    def append_to(self, response_builder: ResponseBuilder) -> None:
+        for i in self._images:
+            response_builder.append_image(i)
