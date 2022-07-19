@@ -19,3 +19,12 @@ class Input:
     @property
     def is_ping(self) -> bool:
         return  "ping" in self.utterance
+
+    @property
+    def number(self) -> float | None:
+        return next((
+            float(e["value"])
+                for e in self._request["request"]["nlu"]["entities"]
+                if e["type"] == "YANDEX.NUMBER"),
+            None
+        )

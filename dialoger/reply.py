@@ -49,3 +49,14 @@ class ImagesReply(Reply):
     def append_to(self, response_builder: ResponseBuilder) -> None:
         for i in self._images:
             response_builder.append_image(i)
+
+
+class CardReply(Reply):
+    _image: str
+
+    def __init__(self, image: str) -> None:
+        self._image = image
+
+    def append_to(self, response_builder: ResponseBuilder) -> None:
+        if self._image:
+            response_builder.set_card_image(self._image)
