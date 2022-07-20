@@ -9,3 +9,4 @@ faiss-cpu
 stanza
 httpx
 pillow-simd
+black

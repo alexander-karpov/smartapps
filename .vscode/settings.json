@@ -1,12 +1,11 @@
 {
-    "python.analysis.typeCheckingMode": "basic",
-    "python.analysis.diagnosticSeverityOverrides": {
-        "reportMissingTypeStubs": "none"
-    },
-    "python.analysis.useLibraryCodeForTypes": false,
-    "python.testing.pytestArgs": [
-        "src"
-    ],
-    "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.diagnosticSeverityOverrides": {
+    "reportMissingTypeStubs": "none"
+  },
+  "python.analysis.useLibraryCodeForTypes": false,
+  "python.testing.pytestArgs": ["src"],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+  "python.formatting.provider": "black"
 }
