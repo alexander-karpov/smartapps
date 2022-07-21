@@ -6,6 +6,7 @@ import PIL.ImageOps
 from PIL.Image import Image, open as open_image, new as new_image, Resampling
 import base64
 import numpy as np
+import itertools
 
 TILE_SIZE = 32
 STEP_SIZE = TILE_SIZE // 2
@@ -19,26 +20,39 @@ Float2: TypeAlias = tuple[float, float]
 Int2: TypeAlias = tuple[int, int]
 
 
+@dataclass
 class Sprite:
-    center: Float2
     image: Image
-    mirrored: Image
+    mirrored: Image | None
+    center: Float2
 
-    def __init__(self, atlas: Image, position: Int2, size: Int2, center: Float2):
-        self.center = center
+    @staticmethod
+    def from_atlas(
+        atlas: Image, position: Int2, size: Int2, center: Float2
+    ) -> "Sprite":
+        left_top = np.array(position) * TILE_SIZE
+        right_bottom = np.array(size) * TILE_SIZE + left_top
 
-        x1 = position[0] * TILE_SIZE
-        y1 = position[1] * TILE_SIZE
-        x2 = x1 + size[0] * TILE_SIZE
-        y2 = y1 + size[1] * TILE_SIZE
+        image = atlas.crop((*left_top, *right_bottom))
 
-        self.image = atlas.crop((x1, y1, x2, y2))
-        self.mirrored = PIL.ImageOps.mirror(self.image)
+        return Sprite(image, PIL.ImageOps.mirror(image), center)
+
+    @staticmethod
+    def from_image(image: Image, center: Float2) -> "Sprite":
+        return Sprite(image, None, center)
 
 
 class GameObject(ABC):
     sptire: Sprite
     position: np.ndarray
+    destroyed: bool
+
+    def __init__(self, sptire: Sprite, position: Float2) -> None:
+        super().__init__()
+
+        self.sptire = sptire
+        self.position = np.array(position, dtype=float)
+        self.destroyed = False
 
     @abstractmethod
     def update(self):
@@ -48,16 +62,50 @@ class GameObject(ABC):
     def image(self) -> Image:
         return self.sptire.image
 
+    def destroy(self):
+        self.destroyed = True
 
-class Beast(GameObject):
+
+class RigidBody(GameObject):
+    _bounds: np.ndarray
+
+    def __init__(self, sptire: Sprite, position: Float2, bounds: Float2) -> None:
+        assert bounds[0] <= bounds[1]
+
+        super().__init__(sptire, position)
+
+        self._bounds = np.array(bounds, dtype=float)
+
+    def world_bounds(self) -> np.ndarray:
+        return (
+            self._bounds * TILE_SIZE
+            + self.position[0]
+            - self.image.size[0] * self.sptire.center[0]
+        )
+
+    def collision(self, go: "RigidBody") -> None:
+        pass
+
+    def detect_collision(self, go: "RigidBody") -> bool:
+        a, b = go.world_bounds()
+        my_bounds = self.world_bounds()
+
+        a, b = go.world_bounds()
+
+        return not (np.all(my_bounds < a) or np.all(my_bounds > b))
+
+
+class Beast(RigidBody):
     velocity: np.ndarray
     looks_forward: bool
 
     def __init__(self, position: Float2):
-        super().__init__()
+        super().__init__(
+            sptire=Sprite.from_atlas(atlas, (0, 0), (1, 1), (0.5, 1)),
+            position=position,
+            bounds=(0.25, 0.75),
+        )
 
-        self.sptire = Sprite(atlas, (0, 0), (1, 1), (0.5, 1))
-        self.position = np.array(position, dtype=float)
         self.velocity = np.array((-0.5, 0.0), dtype=float)
 
     def update(self):
@@ -69,21 +117,48 @@ class Beast(GameObject):
         if self.looks_forward:
             return self.sptire.image
 
-        return self.sptire.mirrored
+        return self.sptire.mirrored or self.sptire.image
+
+    def hit(self):
+        self.position[1] += 32
+
+        self.destroy()
 
 
 class Hunter(GameObject):
     def __init__(self, position: Float2):
-        super().__init__()
-
-        self.sptire = Sprite(atlas, (0, 1), (1, 1), (0.5, 1))
-        self.position = np.array(position)
+        super().__init__(Sprite.from_atlas(atlas, (0, 1), (1, 1), (0.5, 1)), position)
 
     def update(self):
         pass
 
 
-scene = [Beast((116, 0)), Beast((124, 0)), Beast((192, 0)), Hunter((64, 0))]
+class Arrow(RigidBody):
+    def __init__(self, position: Float2):
+        super().__init__(
+            Sprite.from_image(
+                new_image("RGBA", (STEP_SIZE, 1), (0, 0, 0, 255)), (0, 0.25)
+            ),
+            position,
+            bounds=(0, 0.5),
+        )
+
+    def update(self):
+        self.destroy()
+
+    def collision(self, go: "RigidBody"):
+        super().collision(go)
+
+        if isinstance(go, Beast):
+            go.hit()
+
+
+scene: list[GameObject] = [
+    Beast((116, 0)),
+    Beast((124, 0)),
+    Beast((192, 0)),
+    Hunter((64, 0)),
+]
 
 
 FRAME_WIDTH = 776
@@ -101,7 +176,10 @@ steps_n = 12
 
 
 def shoot(d) -> None:
-    pass
+    global scene
+
+    scene.append(Arrow((32 + STEP_SIZE * (d - 1), 12)))
+
     # global beast_speed, beast_accel
     # one_d = sw // steps_n
     # hunter_bow_x = hunter.position[0] + 26
@@ -113,8 +191,18 @@ def shoot(d) -> None:
 
 
 def update():
+    global scene
+
     for go in scene:
         go.update()
+
+    for a, b in itertools.combinations(
+        (go for go in scene if isinstance(go, RigidBody)), 2
+    ):
+        if a.detect_collision(b):
+            a.collision(b)
+            b.collision(a)
+
     # global beast_speed, beast_dir, beast_accel
     # beast_dir = random.choice((-1, 1))
     # beast.position = (sw // 2 + beast_dir * random.randint(0, (sw // 4)),0)
@@ -155,3 +243,8 @@ class Renderer:
 
         resized = img.resize((32, 32), Resampling.BILINEAR)
         return base64.b32encode(numpy.packbits(resized)).decode("utf-8")
+
+
+def drop_destroyed():
+    global scene
+    scene = [go for go in scene if not go.destroyed]
