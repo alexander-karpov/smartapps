@@ -2,9 +2,9 @@ from dialoger import Dialog
 import random
 
 def append_lets_play(dialog: Dialog) -> None:
-    on, say, prompt = dialog.append_handler, dialog.append_reply, dialog.append_prompt
+    on, say, postroll = dialog.append_handler, dialog.append_reply, dialog.append_postroll
 
-    @prompt()
+    @postroll()
     def _():
         say(random.choice((
             'А хочешь со мной поиграть?',
@@ -12,7 +12,7 @@ def append_lets_play(dialog: Dialog) -> None:
             'Я хочу поиграть.',
         )))
 
-        on('во что', 'во что будем играть', yes=True)(
+        on('во что', 'во что будем играть', including_yes=True)(
             lets_play
         )
 

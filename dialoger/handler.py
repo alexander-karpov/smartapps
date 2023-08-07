@@ -5,7 +5,7 @@ from dialoger.input import Input
 
 @dataclass
 class Handler:
-    action: Callable[[], Coroutine[Any, Any, None]]
+    action: Callable[[], Coroutine[Any, Any, None] | None]
     generation: int
 
 
@@ -24,5 +24,5 @@ class OtherwiseHandler(Handler):
     pass
 
 @dataclass
-class PromptHandler(Handler):
+class PostrollHandler(Handler):
     pass

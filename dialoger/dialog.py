@@ -1,6 +1,6 @@
 import random
 from typing import Any, Callable, Coroutine, Iterable
-from dialoger.handler import Handler, OtherwiseHandler, IntentHandler, TriggerHandler, PromptHandler
+from dialoger.handler import Handler, OtherwiseHandler, IntentHandler, TriggerHandler, PostrollHandler
 from dialoger.reply import Reply, TextReply
 from dialoger.input import Input
 from dialoger.response_builder import ResponseBuilder
@@ -30,16 +30,16 @@ class Dialog:
     def append_handler(self,
         *intent: str,
         trigger: Callable[[Input], bool] | None = None,
-        yes: bool = False
+        including_yes: bool = False
     ):
-        def decorator(action: Callable[[], Coroutine[Any, Any, None]]):
+        def decorator(action: Callable[[], Coroutine[Any, Any, None] | None]):
             assert not (trigger and intent), 'Параметры trigger и примеры фраз несовместимы'
-            assert not (trigger and yes), 'Параметры trigger и yes несовместимы'
+            assert not (trigger and including_yes), 'Параметры trigger и yes несовместимы'
 
-            if len(intent) or yes:
+            if len(intent) or including_yes:
                 phrases = intent
 
-                if yes:
+                if including_yes:
                     phrases = phrases + ('да', 'давай', 'хочу', 'буду', 'хорошо', 'согласен')
 
                 self._handlers.append(IntentHandler(
@@ -72,9 +72,9 @@ class Dialog:
                 case _:
                     self._replies.append(TextReply(reply))
 
-    def append_prompt(self):
-        def decorator(action: Callable[[], Coroutine[Any, Any, None]]):
-            self._handlers.append(PromptHandler(
+    def append_postroll(self):
+        def decorator(action: Callable[[], Coroutine[Any, Any, None] | None]):
+            self._handlers.append(PostrollHandler(
                 action=action,
                 generation=self._generation,
             ))
@@ -137,7 +137,7 @@ class Dialog:
             await self._handle_by_intents(input) or \
             await self._handle_by_otherwise()
 
-        await self._apply_prompts()
+        await self._apply_postrolls()
 
         if not self._replies:
             self.append_reply("Я тебя полохо слышу. Подойти ближе.")
@@ -145,7 +145,10 @@ class Dialog:
     async def _handle_by_triggers(self, input: Input) -> bool:
         for h in reversed(self._handlers):
             if isinstance(h, TriggerHandler) and h.trigger(input):
-                await h.action()
+                maybe_coroutine = h.action()
+
+                if maybe_coroutine is not None:
+                    await maybe_coroutine
 
                 return True
 
@@ -166,20 +169,26 @@ class Dialog:
         if most_similar is None:
             return False
 
-        await intent_handlers[most_similar].action()
+        maybe_coroutine = intent_handlers[most_similar].action()
+
+        if maybe_coroutine is not None:
+            await maybe_coroutine
 
         return True
 
     async def _handle_by_otherwise(self) -> bool:
         for h in reversed(self._handlers):
             if isinstance(h, OtherwiseHandler):
-                await h.action()
+                maybe_coroutine = h.action()
+
+                if maybe_coroutine is not None:
+                    await maybe_coroutine
 
                 return True
 
         return False
 
-    async def _apply_prompts(self):
+    async def _apply_postrolls(self):
         if self._generation % 4 != 0:
             return
 
@@ -188,16 +197,20 @@ class Dialog:
         if has_new_handlers:
             return
 
-        prompts = [h for h in self._handlers if isinstance(h, PromptHandler)]
+        postrolls = [h for h in self._handlers if isinstance(h, PostrollHandler)]
 
-        if not prompts:
+        if not postrolls:
             return
 
-        random.shuffle(prompts)
-        prompts.sort(key=lambda h: -h.generation)
+        random.shuffle(postrolls)
+        postrolls.sort(key=lambda h: -h.generation)
 
-        await prompts[0].action()
-        self._handlers.remove(prompts[0])
+        maybe_coroutine = postrolls[0].action()
+
+        if maybe_coroutine is not None:
+            await maybe_coroutine
+
+        self._handlers.remove(postrolls[0])
 
     def _drop_outdated_handlers(self):
         """

@@ -2,9 +2,9 @@ from dialoger import Dialog
 import random
 
 def append_how_are_you(dialog: Dialog) -> None:
-    on, say, prompt = dialog.append_handler, dialog.append_reply, dialog.append_prompt
+    on, say, postroll = dialog.append_handler, dialog.append_reply, dialog.append_postroll
 
-    @prompt()
+    @postroll()
     def _():
         say(random.choice((
             'Сказать тебе как у меня дела?',
@@ -12,7 +12,7 @@ def append_how_are_you(dialog: Dialog) -> None:
             'Рассказать, что я думаю?',
         )))
 
-        on('расскажи', yes=True)(
+        on('расскажи', including_yes=True)(
             how_are_you
         )
 

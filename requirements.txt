@@ -1,5 +1,6 @@
 black
-pymorphy2[fast]
+numpy
+pymorphy2
 pymorphy2-dicts-ru
 stanza
 faiss-cpu

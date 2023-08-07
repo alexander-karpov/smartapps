@@ -4,7 +4,6 @@ uvicorn \
     --port 8000 \
     --reload \
     --reload-dir ./dialoger \
-    --reload-dir ./renderer \
     --reload-dir ./hagi \
     --reload-dir ./hunter \
     --reload-delay 1 \

@@ -2,9 +2,9 @@ from dialoger import Dialog
 import random
 
 def append_who_are_you(dialog: Dialog) -> None:
-    on, say, prompt = dialog.append_handler, dialog.append_reply, dialog.append_prompt
+    on, say, postroll = dialog.append_handler, dialog.append_reply, dialog.append_postroll
 
-    @prompt()
+    @postroll()
     def _():
         say(random.choice((
             'А хочешь знать кто я такой?',
@@ -12,7 +12,7 @@ def append_who_are_you(dialog: Dialog) -> None:
             'Рассказать как я стал таким?',
         )))
 
-        on('расскажи', 'да можно да хочу хочу расскажи историю', yes=True)(
+        on('расскажи', 'да можно да хочу хочу расскажи историю', including_yes=True)(
             who_are_you
         )
 

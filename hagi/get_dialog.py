@@ -1,6 +1,6 @@
 from functools import lru_cache
 import random
-from dialoger import Dialog, TextReply
+from dialoger import Dialog, TextReply, Reply
 from hagi.append_help import append_help
 from hagi.append_greating import append_greating
 from hagi.append_chitchat import append_chitchat
@@ -12,10 +12,10 @@ from hagi.hagi_names import hagi_names
 
 def _create_hagi_dialog() -> Dialog:
     dialog = Dialog(stopwords=hagi_names)
-    on, say, prompt, input = dialog.append_handler, dialog.append_reply, dialog.append_prompt, dialog.input
+    on, say, postroll, input = dialog.append_handler, dialog.append_reply, dialog.append_postroll, dialog.input
 
     @dialog.postproc_replies
-    def _(replies: list[TextReply]) -> list[TextReply]:
+    def _(replies: list[Reply]) -> list[Reply]:
         replies.insert(0, TextReply(('', '<speaker effect="pitch_down">')))
 
         return replies

@@ -51,4 +51,4 @@ class SimilarityIndex:
 
         return None
 
-similarity_index = SimilarityIndex(bert_encoder, 768)
+similarity_index = SimilarityIndex(bert_encoder, 512)
