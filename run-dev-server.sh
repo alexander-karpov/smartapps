@@ -5,7 +5,7 @@ uvicorn \
     --reload \
     --reload-dir ./dialoger \
     --reload-dir ./hagi \
-    --reload-dir ./hunter \
+    --reload-dir ./stories \
     --reload-delay 1 \
     --workers 1 \
     --no-access-log

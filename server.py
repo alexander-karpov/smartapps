@@ -16,8 +16,8 @@ async def app(scope, receive, send):
         case "hagi":
             from hagi import get_dialog
             dialog = get_dialog(request["session"]["session_id"])
-        case "hunter":
-            from hunter import get_dialog
+        case "stories":
+            from stories import get_dialog
             dialog = get_dialog(request["session"]["session_id"])
 
     assert dialog, 'Хоть один диалог выбран'
@@ -55,8 +55,8 @@ async def read_body(receive):
     return body
 
 
-def detect_app(request) ->  Literal["hunter"] | Literal["hagi"]:
-    if request["session"]["skill_id"] == '69eedbaf-4ac3-4df9-9381-fd9b3a66b67c':
-        return 'hunter'
+def detect_app(request) ->  Literal["stories"] | Literal["hagi"]:
+    if request["session"]["skill_id"] == '2f2e926e-66c8-4f66-b628-18255c83e588':
+        return 'stories'
 
     return 'hagi'
