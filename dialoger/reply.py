@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Iterable
 from dialoger.response_builder import ResponseBuilder
-
+from dialoger.voice import Voice
 
 class Reply(ABC):
     @abstractmethod
@@ -12,11 +12,13 @@ class TextReply(Reply):
     _text: list[str]
     _tts: list[str]
     _end: bool
+    _voice: Voice | None
 
-    def __init__(self, *parts: str | tuple[str,str], end:bool = False) -> None:
+    def __init__(self, *parts: str | tuple[str,str], end:bool = False, voice: Voice = Voice.SHITOVA_GPU) -> None:
         self._text = []
         self._tts = []
         self._end = end
+        self._voice = voice
 
         for  part in parts:
             match part:
@@ -32,6 +34,9 @@ class TextReply(Reply):
     def append_to(self, response_builder: ResponseBuilder) -> None:
         for t in self._text:
             response_builder.append_text(t)
+
+        if self._voice is not None:
+            response_builder.append_tts(f'<speaker voice=\'{self._voice.value}\'>')
 
         for t in self._tts:
             response_builder.append_tts(t)
