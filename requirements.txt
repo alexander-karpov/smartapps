@@ -10,3 +10,4 @@ tensorflow-hub
 uvicorn[standard]
 pymongo
 numpy
+yargy
