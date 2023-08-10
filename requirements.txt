@@ -9,5 +9,6 @@ tensorflow-text
 tensorflow-hub
 uvicorn[standard]
 pymongo
-numpy
 yargy
+httpx
+async-lru
