@@ -1,5 +1,5 @@
 from dialoger import Dialog
-from hagi.morph import inflect
+from morphy import inflect
 from hagi.nlp import nlp
 from hagi.hagi_names import hagi_names
 

@@ -140,7 +140,7 @@ class Dialog:
         await self._apply_postrolls()
 
         if not self._replies:
-            self.append_reply("Я тебя полохо слышу. Подойти ближе.")
+            self.append_reply("Я тебя полохо слышу. Подойти поближе.")
 
     async def _handle_by_triggers(self, input: Input) -> bool:
         for h in reversed(self._handlers):

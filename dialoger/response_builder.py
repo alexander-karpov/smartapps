@@ -37,6 +37,8 @@ class ResponseBuilder:
         self._images.append(image_id)
 
     def set_card_image(self, image_id: str) -> None:
+        assert self._card_image is None, 'Картинка ещё не задана'
+
         self._card_image = image_id
 
     def end_session(self) -> None:
