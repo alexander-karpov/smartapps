@@ -49,7 +49,7 @@ class DialogAPI:
                 IntentHandler(
                     phrases=phrases,
                     action=action,
-                    generation=self._dialog.generation,
+                    time_to_live=1,
                 )
             )
 
@@ -70,7 +70,7 @@ class DialogAPI:
                 TriggerHandler(
                     trigger=trigger,
                     action=action,
-                    generation=self._dialog.generation,
+                    time_to_live=1,
                 )
             )
 
@@ -85,7 +85,7 @@ class DialogAPI:
         self._dialog.append_handler(
             OtherwiseHandler(
                 action=action,
-                generation=self._dialog.generation,
+                time_to_live=1,
             )
         )
 
@@ -98,7 +98,7 @@ class DialogAPI:
         self._dialog.append_handler(
             PostrollHandler(
                 action=action,
-                generation=self._dialog.generation,
+                time_to_live=1,
             )
         )
 
@@ -112,7 +112,7 @@ class DialogAPI:
             TriggerHandler(
                 trigger=lambda i: i.is_new_session,
                 action=lambda _: action(),
-                generation=self._dialog.generation,
+                time_to_live=1,
             )
         )
 

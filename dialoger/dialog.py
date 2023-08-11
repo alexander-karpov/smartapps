@@ -1,11 +1,9 @@
-import random
-from typing import Any, Iterable, TypeVar, cast
+from typing import Any, Iterable, cast
 from dialoger.handler import (
     Handler,
     OtherwiseHandler,
     IntentHandler,
     TriggerHandler,
-    PostrollHandler,
 )
 from dialoger.reply import Reply, TextReply
 from dialoger.input import Input
@@ -20,14 +18,12 @@ class Dialog:
     _sim_index: SimilarityIndex
     _handlers: list[Handler]
     _replies: list[Reply]
-    _generation: int
     _input: Input | None
     _stopwords: frozenset[str]
 
     def __init__(self, *, stopwords: Iterable[str] = []) -> None:
         self._handlers = []
         self._sim_index = similarity_index
-        self._generation = 0
         self._replies = []
         self._stopwords = frozenset(stopwords)
 
@@ -45,15 +41,10 @@ class Dialog:
 
         return self._input
 
-    @property
-    def generation(self) -> int:
-        return self._generation
-
     # Server API
     # ----------
 
     async def handle_request(self, request: DialogRequest) -> DialogResponse:
-        self._generation += 1
         response_builder = ResponseBuilder()
         input = Input(request)
 
@@ -69,7 +60,7 @@ class Dialog:
 
     def after_response(self):
         self._input = None
-        self._drop_outdated_handlers()
+        self._update_ttl_and_drop_outdated_handlers()
         self._warmup_sim_index()
         self._replies = []
 
@@ -118,15 +109,16 @@ class Dialog:
 
     async def _handle_by_intents(self, input: Input) -> bool:
         intent_handlers = [h for h in self._handlers if isinstance(h, IntentHandler)]
-        without_stopwords = " ".join(
+
+        input_without_stopwords = " ".join(
             t for t in input.tokens if t not in self._stopwords
         )
 
-        if not intent_handlers or not without_stopwords:
+        if not intent_handlers or not input_without_stopwords:
             return False
 
         most_similar = self._sim_index.most_similar(
-            intents=[h.phrases for h in intent_handlers], text=without_stopwords
+            intents=[h.phrases for h in intent_handlers], text=input_without_stopwords
         )
 
         if most_similar is None:
@@ -152,38 +144,41 @@ class Dialog:
         return False
 
     async def _apply_postrolls(self):
-        if self._generation % 4 != 0:
-            return
+        pass
+        # if self._generation % 4 != 0:
+        #     return
 
-        has_new_handlers = next(
-            (True for h in self._handlers if h.generation == self._generation), False
-        )
+        # has_new_handlers = next(
+        #     (True for h in self._handlers if h.time_to_live == self._generation), False
+        # )
 
-        if has_new_handlers:
-            return
+        # if has_new_handlers:
+        #     return
 
-        postrolls = [h for h in self._handlers if isinstance(h, PostrollHandler)]
+        # postrolls = [h for h in self._handlers if isinstance(h, PostrollHandler)]
 
-        if not postrolls:
-            return
+        # if not postrolls:
+        #     return
 
-        random.shuffle(postrolls)
-        postrolls.sort(key=lambda h: -h.generation)
+        # random.shuffle(postrolls)
+        # postrolls.sort(key=lambda h: -h.generation)
 
-        maybe_coroutine = postrolls[0].action()
+        # maybe_coroutine = postrolls[0].action()
 
-        if maybe_coroutine is not None:
-            await maybe_coroutine
+        # if maybe_coroutine is not None:
+        #     await maybe_coroutine
 
-        self._handlers.remove(postrolls[0])
+        # self._handlers.remove(postrolls[0])
 
-    def _drop_outdated_handlers(self):
+    def _update_ttl_and_drop_outdated_handlers(self):
         """
         Отбрасывает неактуальные обработчики
         """
-        self._handlers = [
-            h for h in self._handlers if h.generation in (0, self._generation)
-        ]
+        for h in self._handlers:
+            h.time_to_live -= 1
+
+            if h.time_to_live < 1:
+                self._handlers.remove(h)
 
     def _warmup_sim_index(self):
         """

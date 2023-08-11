@@ -6,32 +6,32 @@ T = TypeVar("T")
 
 
 class Handler(Protocol):
-    generation: int
+    time_to_live: int
 
 
 @dataclass
 class IntentHandler:
-    generation: int
+    time_to_live: int
     action: Callable[[], Coroutine[Any, Any, None] | None]
     phrases: tuple[str, ...]
 
 
 @dataclass
 class TriggerHandler(Generic[T]):
-    generation: int
+    time_to_live: int
     action: Callable[[T], Coroutine[Any, Any, None] | None]
     trigger: Callable[[Input], T | None]
 
 
 @dataclass
 class OtherwiseHandler:
-    generation: int
+    time_to_live: int
     action: Callable[[], Coroutine[Any, Any, None] | None]
     pass
 
 
 @dataclass
 class PostrollHandler:
-    generation: int
+    time_to_live: int
     action: Callable[[], Coroutine[Any, Any, None] | None]
     pass
