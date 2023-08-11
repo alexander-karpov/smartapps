@@ -86,7 +86,9 @@ class Dialog:
         await self._apply_postrolls()
 
         if not self._replies:
-            self.append_reply(TextReply("Я тебя полохо слышу. Подойти поближе."))
+            self.append_reply(
+                TextReply("Я тебя плохо слышу. Подойти поближе и повтори.")
+            )
 
     async def _handle_by_triggers(self, input: Input) -> bool:
         for h in reversed(self._handlers):
@@ -176,8 +178,7 @@ class Dialog:
         for h in self._handlers:
             h.time_to_live -= 1
 
-            if h.time_to_live < 1:
-                self._handlers.remove(h)
+        self._handlers = [h for h in self._handlers if h.time_to_live == 0]
 
     def _warmup_sim_index(self):
         """

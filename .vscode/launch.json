@@ -5,17 +5,21 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Flask",
+            "name": "Python: Uvicorn",
             "type": "python",
             "request": "launch",
-            "module": "flask",
+            "module": "uvicorn",
             "env": {
-                "FLASK_APP": "src/app.py",
+                "FLASK_APP": "server.py",
                 "FLASK_ENV": "development"
             },
             "args": [
-                "run",
-                "--no-debugger"
+                "server:app",
+                "--host",
+                "0.0.0.0",
+                "--workers",
+                "1",
+                "--no-access-log",
             ],
             "jinja": true
         }

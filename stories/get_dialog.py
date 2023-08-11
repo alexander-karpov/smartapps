@@ -19,7 +19,7 @@ class AtTheLessonStory:
         self._ask_fruit(api)
 
     def _ask_fruit(self, api: DialogAPI) -> None:
-        api.say("Назови любой фрукт или овощ.")
+        api.say("Назови что-нибудь съедобное")
 
         @api.trigger(lambda i: i.entities())
         async def _(entities: list[Entity]):
@@ -35,7 +35,7 @@ class AtTheLessonStory:
             self._ask_fruit(api)
 
     def _ask_name(self, api: DialogAPI) -> None:
-        api.say("Назови имя твоего друга или знакомого.")
+        api.say("Назови имя твоего друга или знакомого")
 
         @api.otherwise
         def _():
@@ -43,29 +43,18 @@ class AtTheLessonStory:
 
             api.say(
                 "Однажды у нас на уроке географии учительница спрашивает:",
-                TextReply(
-                    "\n- Ребята,",
-                    ("", "sil <[300]>"),
-                    "как называется большая пустыня в Африке?",
-                    voice=Voice.OKSANA_GPU,
-                ),
-                TextReply(("\n- Сахара!", "Сах+ара!"), voice=Voice.KOSTYA_GPU),
-                " - отвечает один мальчик.",
-                TextReply(
-                    "\n- Отлично, а как называется самая глубокая бездна в океане?",
-                    voice=Voice.OKSANA_GPU,
-                ),
-                TextReply("\n- Бермудский треугольник!", voice=Voice.KOLYA_GPU),
+                "\n- Ребята,",
+                "как называется большая пустыня в Африке?",
+                "\n- Сах+ара!" " - отвечает один мальчик.",
+                "\n- Отлично, а как называется самая глубокая бездна в океане?",
+                "\n- Бермудский треугольник!",
                 " - отвечает другой.",
-                TextReply("\n- Нет-нет-нет", voice=Voice.OKSANA_GPU),
+                "\n- Нет-нет",
                 ", - говорит учительница,",
-                TextReply(
-                    " - это не бездна, а географическое явление.",
-                    voice=Voice.OKSANA_GPU,
-                ),
+                " - это не бездна, а географическое явление.",
                 f"И тут {self._name} на третьем ряду вспоминает ответ, встаёт и говорит:",
-                TextReply(f"\n- А, я знаю! {self._fruit}!", voice=Voice.ZAHAR_GPU),
-                "\nВесь класс рассмеялся, а учительница поняла, что вопросы из географии нам лучше не задавать.",
+                f"\n- А! Я знаю! Это {self._fruit}!",
+                "\nВесь класс рассмеялся, а учительница поняла, что пора перекусить",
             )
 
 
