@@ -1,98 +1,86 @@
-from abc import ABC, abstractmethod
 from functools import lru_cache
-from typing import Optional
+from typing import Optional, Protocol
 from dialoger import Dialog, TextReply, Voice
+from enrichment import add_random_adjective
+from morphy import to_nomn
+from entity_parser import parse_entity
 
-class Field:
-    name: str
-    value: Optional[str]
 
-    def __init__(self, name: str) -> None:
-        self.name = name
-        self.value = None
+class Story(Protocol):
+    def tell_story(self, dialog: Dialog) -> None:
+        ...
 
-    def __str__(self) -> str:
-        assert self.value, 'Поле заполнено'
 
-        return self.value
+class AtTheLessonStory:
+    _name: Optional[str]
+    _fruit: Optional[str]
 
-class Story(ABC):
-    fields: list[Field]
+    def tell_story(self, dialog: Dialog) -> None:
+        on, say, input = dialog.append_handler, dialog.append_reply, dialog.input
 
-    def __init__(self) -> None:
-        self.fields = []
-        pass
+        say("Назови твой любимый фрукт или овощ.")
 
-    @abstractmethod
-    def append_to(self, dialog: Dialog) -> None:
-        '''
-        Добавляет историю в ответ диалога
-        '''
+        @on()
+        async def _():
+            entities = parse_entity(input().utterance)
+            fruit = entities[0].nomn if entities else to_nomn(input().tokens[-1])
 
-    def next_empty_field(self) -> Optional[Field]:
-        for f in self.fields:
-            if f.value is None:
-                return f
-            
-        return None
+            self._fruit = await add_random_adjective(fruit)
 
-class AtTheLessonStory(Story):
-    def __init__(self) -> None:
-        super().__init__()
+            say("А теперь имя твоего друга или знакомого.")
 
-        self.fields.extend([Field('имя друга'), Field('имя знакомого'), Field('любимое место')])
+            @on()
+            def _():
+                self._name = input().first_name
 
-        pass
-    
-    def append_to(self, dialog: Dialog) -> None:
-        assert self.next_empty_field() is None, 'Все поля заполнены'
+                say(
+                    "Однажды у нас на уроке географии учительница спрашивает:",
+                    TextReply(
+                        "\n- Ребята,",
+                        ("", "sil <[300]>"),
+                        "как называется большая пустыня в Африке?",
+                        voice=Voice.OKSANA_GPU,
+                    ),
+                    TextReply(("\n- Сахара!", "Сах+ара!"), voice=Voice.KOSTYA_GPU),
+                    " - отвечает один мальчик.",
+                    TextReply(
+                        "\n- Отлично, а как называется самая глубокая бездна в океане?",
+                        voice=Voice.OKSANA_GPU,
+                    ),
+                    TextReply("\n- Бермудский треугольник!", voice=Voice.KOLYA_GPU),
+                    " - отвечает другой.",
+                    TextReply("\n- Нет-нет-нет", voice=Voice.OKSANA_GPU),
+                    ", - говорит учительница,",
+                    TextReply(
+                        " - это не бездна, а географическое явление.",
+                        voice=Voice.OKSANA_GPU,
+                    ),
+                    f"И тут {self._name} на третьем ряду вспоминает ответ, встаёт и говорит:",
+                    TextReply(f"\n- А, я знаю! {self._fruit}!", voice=Voice.ZAHAR_GPU),
+                    "\nВесь класс рассмеялся, а учительница поняла, что вопросы из географии нам лучше не задавать.",
+                )
 
-        say = dialog.append_reply
-        [friend_name, some_name, place] = self.fields
-
-        say(
-            'На уроке географии учительница спрашивает',
-            TextReply(
-                '\n- Ребята,',
-                ('','sil <[300]>'),
-                'как называется большая пустыня в Африке?',
-                voice=Voice.OKSANA_GPU
-            ),
-            TextReply(('\n- Сахара!', 'Сах+ара!'), voice=Voice.KOSTYA_GPU),
-            f' - отвечает мальчик {friend_name}.',
-            TextReply('\n- Отлично, а как называется самая глубокая бездна в океане?', voice=Voice.OKSANA_GPU),
-            TextReply('\n- Бермудский треугольник!', voice=Voice.KOLYA_GPU),
-            f' - отвечает {some_name}.',
-            TextReply('\n- Нет-нет-нет.', voice=Voice.OKSANA_GPU),
-            ', - говорит учительница,',
-            TextReply(' - это не бездна, а географическое явление.', voice=Voice.OKSANA_GPU),
-            'На это мальчик в третьем ряду вспоминает ответ и восклицает:',
-            TextReply(f'\n- А, я знаю! {place}!', voice=Voice.ZAHAR_GPU),
-            'Весь класс рассмеялся, а учительница поняла, что вопросы из географии им нужно повторить еще раз.'
-        )
 
 @lru_cache(maxsize=64)
 def get_dialog(session_id: str) -> Dialog:
-    dialog = Dialog(stopwords=['алиса'])
+    dialog = Dialog(stopwords=["алиса"])
     on, say, input = dialog.append_handler, dialog.append_reply, dialog.input
 
-    story = AtTheLessonStory()
+    stories: list[Story] = [AtTheLessonStory()]
 
-    @on()
-    async def _():
-        field = story.next_empty_field()
-        utterance = input().utterance
+    @on(trigger=lambda i: i.is_new_session)
+    def _():
+        say(
+            "Привет. С тобой часто приключаются весёлые истории? Со мной – постоянно. Хочешь, расскажу тебе что-нибудь?",
+            "Их очень много и все они – чистая правда. Но чтобы их вспомнить, мне нужна твоя помощь.",
+            "Я буду задавать тебе вопросы. Твои ответы помогут мне вспомнить что-то интересное. Начинаем?",
+        )
 
-        if utterance and field:
-            field.value = utterance
+        # 🔥 button
 
-        field = story.next_empty_field()
-
-        if field:
-            say('Назови ', field.name)
-        else:
-            story.append_to(dialog)
-            say('Вот такая история.')
-        
+        @on("начинай", including_yes=True)
+        def _():
+            story = stories[0]
+            story.tell_story(dialog)
 
     return dialog

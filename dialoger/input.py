@@ -1,7 +1,7 @@
 class Input:
     _request: dict
 
-    def __init__(self, request:dict):
+    def __init__(self, request: dict):
         self._request = request
 
     @property
@@ -14,17 +14,30 @@ class Input:
 
     @property
     def utterance(self) -> str:
-       return self._request["request"]["command"]
+        return self._request["request"]["command"]
 
     @property
     def is_ping(self) -> bool:
-        return  "ping" in self.utterance
+        return "ping" in self.utterance
 
     @property
     def number(self) -> float | None:
-        return next((
-            float(e["value"])
+        return next(
+            (
+                float(e["value"])
                 for e in self._request["request"]["nlu"]["entities"]
-                if e["type"] == "YANDEX.NUMBER"),
-            None
+                if e["type"] == "YANDEX.NUMBER"
+            ),
+            None,
+        )
+
+    @property
+    def first_name(self) -> str | None:
+        return next(
+            (
+                str(e["value"]["first_name"])
+                for e in self._request["request"]["nlu"]["entities"]
+                if e["type"] == "YANDEX.FIO"
+            ),
+            None,
         )

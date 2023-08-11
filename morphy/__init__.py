@@ -67,3 +67,15 @@ def inflect(
                 return (inflected.word, inflected.tag)
 
     return None
+
+
+def to_nomn(word: str) -> str:
+    """
+    Приводит к именительному падежу
+    """
+
+    match inflect(word, ({"nomn"},)):
+        case nomn, _:
+            return nomn
+        case _:
+            return word
