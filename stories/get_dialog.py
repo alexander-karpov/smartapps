@@ -4,6 +4,7 @@ from dialoger import Dialog, TextReply, Voice
 from dialoger.dialog_api import DialogAPI
 from enrichment import add_random_adjective
 from entity_parser import Entity
+from morphy import by_gender
 
 
 class Story(Protocol):
@@ -51,11 +52,12 @@ class AtTheLessonStory:
 
     def _tell_story(self, api: DialogAPI) -> None:
         api.say(
-            "Вот одна история."
-            "Однажды у нас на уроке географии учительница спрашивает:",
+            "Вот одна история.",
+            "Однажды на уроке географии учительница задает вопрос:",
             "\n- Ребята,",
             "как называется большая пустыня в Африке?",
-            "\n- Сах+ара!" " - отвечает один мальчик.",
+            "\n- Сах+ара!",
+            " - отвечает один мальчик.",
             "\n- Отлично, а как называется самая глубокая бездна в океане?",
             "\n- Бермудский треугольник!",
             " - отвечает другой.",
@@ -64,12 +66,15 @@ class AtTheLessonStory:
             " - это не бездна, а географическое явление.",
             f"И тут {self._name} на третьем ряду вспоминает ответ и говорит:",
             f"\n- А! Я знаю! Это {self._fruit}!",
-            "\nВесь класс рассмеялся, а учительница поняла, что вопросы по географии нам лучше не задавать",
+            "\nВесь класс рассмеялся, а учительница поняла, что вопросы по географии нам нужно повторить еще раз.",
         )
 
         api.say(
             "",
-            TextReply(f"\n- {self._fruit}? Прямо так и сказал?", voice=Voice.ZAHAR_GPU),
+            TextReply(
+                f"\n- {self._fruit}? Прямо так и {by_gender(self._name or '', 'сказал', 'сказала', 'сказал')}?",
+                voice=Voice.ZAHAR_GPU,
+            ),
             "\n- Да, именно так, чистая правда.",
         )
 

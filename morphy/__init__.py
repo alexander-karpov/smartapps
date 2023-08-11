@@ -1,4 +1,4 @@
-from typing import Optional, cast
+from typing import cast
 from pymorphy2 import MorphAnalyzer as MorphAnalyzerBase  # type: ignore
 from pymorphy2.analyzer import Parse as ParseBase  # type: ignore
 from pymorphy2.tagset import OpencorporaTag as OpencorporaTagBase  # type: ignore
@@ -56,7 +56,7 @@ def parse(word: str) -> list[Parse]:
 
 def inflect(
     word: str, grs_variants: tuple[set[str], ...]
-) -> Optional[tuple[str, OpencorporaTag]]:
+) -> tuple[str, OpencorporaTag] | None:
     parsed = parse(word)
 
     for grs in grs_variants:
@@ -79,3 +79,25 @@ def to_nomn(word: str) -> str:
             return nomn
         case _:
             return word
+
+
+def get_tag(word: str) -> OpencorporaTag:
+    """
+    Возвращает OpencorporaTag слова
+    """
+    parsed = parse(word)
+
+    return parsed[0].tag
+
+
+def by_gender(word: str, masc: str, femn: str, neut: str) -> str:
+    """
+    Выбор согласованного по полу слова
+    """
+    match get_tag(word).gender:
+        case "masc":
+            return masc
+        case "femn":
+            return femn
+        case _:
+            return neut
