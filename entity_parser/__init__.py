@@ -10,7 +10,7 @@ class Entity:
     tags: str
 
 
-def parse_entity(text: str) -> list[Entity]:
+def parse_entities(text: str) -> list[Entity]:
     response: list[Entity] = []
 
     for m in entity_parser.findall(text):

@@ -1,8 +1,14 @@
-class Input:
-    _request: dict
+from typing import Any
+from entity_parser import Entity, parse_entities
 
-    def __init__(self, request: dict):
+
+class Input:
+    _request: dict[Any, Any]
+    _entities: list[Entity] | None
+
+    def __init__(self, request: dict[Any, Any]):
         self._request = request
+        self._entities = None
 
     @property
     def is_new_session(self) -> bool:
@@ -41,3 +47,9 @@ class Input:
             ),
             None,
         )
+
+    def entities(self) -> list[Entity]:
+        if self._entities is None:
+            self._entities = parse_entities(self.utterance)
+
+        return self._entities

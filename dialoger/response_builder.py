@@ -1,3 +1,9 @@
+from typing import Any
+
+
+DialogResponse = dict[Any, Any]
+
+
 class ResponseBuilder:
     _text: list[str]
     _tts: list[str]
@@ -15,10 +21,12 @@ class ResponseBuilder:
         if not text:
             return
 
-        if self._text \
-            and not self._text[-1].endswith(' ') \
-            and not text.startswith((',', '.', '!', '?')):
-            self._text.append(' ')
+        if (
+            self._text
+            and not self._text[-1].endswith(" ")
+            and not text.startswith((",", ".", "!", "?"))
+        ):
+            self._text.append(" ")
 
         self._text.append(text)
 
@@ -26,10 +34,12 @@ class ResponseBuilder:
         if not tts:
             return
 
-        if self._tts \
-            and not self._tts[-1].endswith(' ') \
-            and not tts.startswith((',', '.', '!', '?')):
-            self._tts.append(' ')
+        if (
+            self._tts
+            and not self._tts[-1].endswith(" ")
+            and not tts.startswith((",", ".", "!", "?"))
+        ):
+            self._tts.append(" ")
 
         self._tts.append(tts)
 
@@ -37,22 +47,22 @@ class ResponseBuilder:
         self._images.append(image_id)
 
     def set_card_image(self, image_id: str) -> None:
-        assert self._card_image is None, 'Картинка ещё не задана'
+        assert self._card_image is None, "Картинка ещё не задана"
 
         self._card_image = image_id
 
     def end_session(self) -> None:
         self._end_session = True
 
-    def build(self) -> dict:
-        text = ''.join(self._text)[0:1024]
-        tts = ''.join(self._tts)[0:1024]
+    def build(self) -> DialogResponse:
+        text = "".join(self._text)[0:1024]
+        tts = "".join(self._tts)[0:1024]
         card = None
 
         if self._images:
             card = {
                 "type": "ImageGallery",
-                "items": [{ "image_id": id } for id in self._images]
+                "items": [{"image_id": id} for id in self._images],
             }
 
         if self._card_image:
@@ -61,8 +71,12 @@ class ResponseBuilder:
                 "image_id": self._card_image,
             }
 
-
         return {
-            'response': { 'text': text, 'tts': tts, 'end_session': self._end_session, "card": card },
-            'version': '1.0'
+            "response": {
+                "text": text,
+                "tts": tts,
+                "end_session": self._end_session,
+                "card": card,
+            },
+            "version": "1.0",
         }

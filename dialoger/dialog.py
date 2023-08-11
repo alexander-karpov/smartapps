@@ -1,10 +1,19 @@
 import random
-from typing import Any, Callable, Coroutine, Iterable
-from dialoger.handler import Handler, OtherwiseHandler, IntentHandler, TriggerHandler, PostrollHandler
+from typing import Any, Iterable, TypeVar, cast
+from dialoger.handler import (
+    Handler,
+    OtherwiseHandler,
+    IntentHandler,
+    TriggerHandler,
+    PostrollHandler,
+)
 from dialoger.reply import Reply, TextReply
 from dialoger.input import Input
-from dialoger.response_builder import ResponseBuilder
+from dialoger.response_builder import DialogResponse, ResponseBuilder
 from dialoger.similarity_index import SimilarityIndex, similarity_index
+
+
+DialogRequest = dict[Any, Any]
 
 
 class Dialog:
@@ -13,7 +22,6 @@ class Dialog:
     _replies: list[Reply]
     _generation: int
     _input: Input | None
-    _postproc_replies: Callable[[list[Reply]], list[Reply]] | None
     _stopwords: frozenset[str]
 
     def __init__(self, *, stopwords: Iterable[str] = []) -> None:
@@ -21,82 +29,30 @@ class Dialog:
         self._sim_index = similarity_index
         self._generation = 0
         self._replies = []
-        self._postproc_replies = None
         self._stopwords = frozenset(stopwords)
 
-    # Dialog flow API
+    # Dialog API
     # ---------------
 
-    def append_handler(self,
-        *intent: str,
-        trigger: Callable[[Input], bool] | None = None,
-        including_yes: bool = False
-    ):
-        def decorator(action: Callable[[], Coroutine[Any, Any, None] | None]):
-            assert not (trigger and intent), 'Параметры trigger и примеры фраз несовместимы'
-            assert not (trigger and including_yes), 'Параметры trigger и yes несовместимы'
+    def append_handler(self, handler: Handler):
+        self._handlers.append(handler)
 
-            if len(intent) or including_yes:
-                phrases = intent
-
-                if including_yes:
-                    phrases = phrases + ('да', 'давай', 'хочу', 'буду', 'хорошо', 'согласен')
-
-                self._handlers.append(IntentHandler(
-                    phrases=phrases,
-                    action=action,
-                    generation=self._generation,
-                ))
-
-            elif trigger:
-                self._handlers.append(TriggerHandler(
-                    trigger=trigger,
-                    action=action,
-                    generation=self._generation,
-                ))
-            else:
-                self._handlers.append(OtherwiseHandler(
-                    action=action,
-                    generation=self._generation,
-                ))
-
-            return action
-
-        return decorator
-
-    def append_reply(self, *replies: Reply | str | tuple[str,str]):
-        for reply in replies:
-            match reply:
-                case Reply():
-                    self._replies.append(reply)
-                case _:
-                    self._replies.append(TextReply(reply))
-
-    def append_postroll(self):
-        def decorator(action: Callable[[], Coroutine[Any, Any, None] | None]):
-            self._handlers.append(PostrollHandler(
-                action=action,
-                generation=self._generation,
-            ))
-
-            return action
-
-        return decorator
+    def append_reply(self, reply: Reply):
+        self._replies.append(reply)
 
     def input(self) -> Input:
         assert self._input
 
         return self._input
 
-    def postproc_replies(self, fn: Callable[[list[Reply]], list[Reply]]):
-        self._postproc_replies = fn
-
-        return fn
+    @property
+    def generation(self) -> int:
+        return self._generation
 
     # Server API
     # ----------
 
-    async def handle_request(self, request: dict) -> dict:
+    async def handle_request(self, request: DialogRequest) -> DialogResponse:
         self._generation += 1
         response_builder = ResponseBuilder()
         input = Input(request)
@@ -121,9 +77,6 @@ class Dialog:
     # --------------
 
     def _replies_to_response(self, response_builder: ResponseBuilder):
-        if self._postproc_replies:
-            self._replies = self._postproc_replies(self._replies)
-
         for reply in self._replies:
             reply.append_to(response_builder)
 
@@ -133,37 +86,47 @@ class Dialog:
         """
         self._input = input
 
-        _ = await self._handle_by_triggers(input) or \
-            await self._handle_by_intents(input) or \
-            await self._handle_by_otherwise()
+        _ = (
+            await self._handle_by_triggers(input)
+            or await self._handle_by_intents(input)
+            or await self._handle_by_otherwise()
+        )
 
         await self._apply_postrolls()
 
         if not self._replies:
-            self.append_reply("Я тебя полохо слышу. Подойти поближе.")
+            self.append_reply(TextReply("Я тебя полохо слышу. Подойти поближе."))
 
     async def _handle_by_triggers(self, input: Input) -> bool:
         for h in reversed(self._handlers):
-            if isinstance(h, TriggerHandler) and h.trigger(input):
-                maybe_coroutine = h.action()
+            match h:
+                case TriggerHandler(h):
+                    h = cast(TriggerHandler[Any], h)
+                    result = h.trigger(input)
 
-                if maybe_coroutine is not None:
-                    await maybe_coroutine
+                    if result:
+                        maybe_coroutine = h.action(result)
 
-                return True
+                        if maybe_coroutine is not None:
+                            await maybe_coroutine
+
+                        return True
+                case _:
+                    pass
 
         return False
 
     async def _handle_by_intents(self, input: Input) -> bool:
         intent_handlers = [h for h in self._handlers if isinstance(h, IntentHandler)]
-        without_stopwords = ' '.join(t for t in input.tokens if t not in self._stopwords)
+        without_stopwords = " ".join(
+            t for t in input.tokens if t not in self._stopwords
+        )
 
         if not intent_handlers or not without_stopwords:
             return False
 
         most_similar = self._sim_index.most_similar(
-            intents=[h.phrases for h in intent_handlers],
-            text=without_stopwords
+            intents=[h.phrases for h in intent_handlers], text=without_stopwords
         )
 
         if most_similar is None:
@@ -192,7 +155,9 @@ class Dialog:
         if self._generation % 4 != 0:
             return
 
-        has_new_handlers = next((True for h in self._handlers if h.generation == self._generation), False)
+        has_new_handlers = next(
+            (True for h in self._handlers if h.generation == self._generation), False
+        )
 
         if has_new_handlers:
             return
@@ -216,7 +181,9 @@ class Dialog:
         """
         Отбрасывает неактуальные обработчики
         """
-        self._handlers = [h for h in self._handlers if h.generation in (0, self._generation)]
+        self._handlers = [
+            h for h in self._handlers if h.generation in (0, self._generation)
+        ]
 
     def _warmup_sim_index(self):
         """
@@ -227,3 +194,5 @@ class Dialog:
             match h:
                 case IntentHandler(phrases=p):
                     self._sim_index.add(p)
+                case _:
+                    pass

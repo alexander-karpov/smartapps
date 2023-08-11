@@ -1,28 +1,37 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Coroutine
+from typing import Any, Callable, Coroutine, Generic, Protocol, TypeVar
 from dialoger.input import Input
 
+T = TypeVar("T")
 
-@dataclass
-class Handler:
-    action: Callable[[], Coroutine[Any, Any, None] | None]
+
+class Handler(Protocol):
     generation: int
 
 
 @dataclass
-class IntentHandler(Handler):
+class IntentHandler:
+    generation: int
+    action: Callable[[], Coroutine[Any, Any, None] | None]
     phrases: tuple[str, ...]
 
 
 @dataclass
-class TriggerHandler(Handler):
-    trigger: Callable[[Input], bool]
+class TriggerHandler(Generic[T]):
+    generation: int
+    action: Callable[[T], Coroutine[Any, Any, None] | None]
+    trigger: Callable[[Input], T | None]
 
 
 @dataclass
-class OtherwiseHandler(Handler):
+class OtherwiseHandler:
+    generation: int
+    action: Callable[[], Coroutine[Any, Any, None] | None]
     pass
 
+
 @dataclass
-class PostrollHandler(Handler):
+class PostrollHandler:
+    generation: int
+    action: Callable[[], Coroutine[Any, Any, None] | None]
     pass
