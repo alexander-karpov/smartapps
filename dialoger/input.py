@@ -43,7 +43,18 @@ class Input:
             (
                 str(e["value"]["first_name"])
                 for e in self._request["request"]["nlu"]["entities"]
-                if e["type"] == "YANDEX.FIO"
+                if e["type"] == "YANDEX.FIO" and "first_name" in e["value"]
+            ),
+            None,
+        )
+
+    @property
+    def last_name(self) -> str | None:
+        return next(
+            (
+                str(e["value"]["last_name"])
+                for e in self._request["request"]["nlu"]["entities"]
+                if e["type"] == "YANDEX.FIO" and "last_name" in e["value"]
             ),
             None,
         )
