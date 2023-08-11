@@ -3,9 +3,11 @@ from typing import Iterable
 from dialoger.response_builder import ResponseBuilder
 from dialoger.voice import Voice
 
+
 class Reply(ABC):
     @abstractmethod
-    def append_to(self, response_builder: ResponseBuilder) -> None: ...
+    def append_to(self, response_builder: ResponseBuilder) -> None:
+        ...
 
 
 class TextReply(Reply):
@@ -14,29 +16,36 @@ class TextReply(Reply):
     _end: bool
     _voice: Voice | None
 
-    def __init__(self, *parts: str | tuple[str,str], end:bool = False, voice: Voice = Voice.SHITOVA_GPU) -> None:
+    def __init__(
+        self,
+        *parts: str | tuple[str, str],
+        end: bool = False,
+        voice: Voice = Voice.SHITOVA_GPU,
+    ) -> None:
         self._text = []
         self._tts = []
         self._end = end
         self._voice = voice
 
-        for  part in parts:
+        for part in parts:
             match part:
                 case str(text), str(tts):
                     self._text.append(text)
                     self._tts.append(tts)
                 case str(part):
                     self._text.append(part)
-                    self._tts.append(part.replace('+', ''))
+                    self._tts.append(part.replace("+", ""))
                 case _:
-                    raise ValueError(f'Invalid type for parts item: {part}')
+                    raise ValueError(f"Invalid type for parts item: {part}")
 
     def append_to(self, response_builder: ResponseBuilder) -> None:
         for t in self._text:
             response_builder.append_text(t)
 
         if self._voice is not None:
-            response_builder.append_tts(f'<speaker voice=\'{self._voice.value}\'>')
+            response_builder.append_tts(f"<speaker voice='{self._voice.value}'>")
+
+        response_builder.append_tts("sil <[300]>")
 
         for t in self._tts:
             response_builder.append_tts(t)
