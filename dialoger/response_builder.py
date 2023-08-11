@@ -1,5 +1,7 @@
 from typing import Any
 
+from dialoger.voice import Voice
+
 
 DialogResponse = dict[Any, Any]
 
@@ -8,14 +10,14 @@ class ResponseBuilder:
     _text: list[str]
     _tts: list[str]
     _images: list[str]
-    _card_image: str | None
+    _card_image: str | None = None
     _end_session: bool = False
+    _current_voice: Voice = Voice.SHITOVA_GPU
 
     def __init__(self) -> None:
         self._text = []
         self._tts = []
         self._images = []
-        self._card_image = None
 
     def append_text(self, text: str) -> None:
         if not text:
@@ -34,14 +36,19 @@ class ResponseBuilder:
         if not tts:
             return
 
-        if (
-            self._tts
-            and not self._tts[-1].endswith(" ")
-            and not tts.startswith((",", ".", "!", "?"))
-        ):
+        if self._tts:
             self._tts.append(" ")
 
         self._tts.append(tts)
+
+    def set_voice(self, voice: Voice) -> None:
+        if voice != self._current_voice:
+            self._current_voice = voice
+            self._tts.append(f"<speaker voice='{voice.value}'>")
+
+    def append_silence(self, ms: int = 300) -> None:
+        if self._tts:
+            self._tts.append(f"sil <[{ms}]>")
 
     def append_image(self, image_id: str) -> None:
         self._images.append(image_id)

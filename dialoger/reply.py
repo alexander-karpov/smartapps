@@ -33,8 +33,8 @@ class TextReply(Reply):
                     self._text.append(text)
                     self._tts.append(tts)
                 case str(part):
-                    self._text.append(part)
-                    self._tts.append(part.replace("+", ""))
+                    self._text.append(part.replace("+", ""))
+                    self._tts.append(part)
                 case _:
                     raise ValueError(f"Invalid type for parts item: {part}")
 
@@ -43,9 +43,9 @@ class TextReply(Reply):
             response_builder.append_text(t)
 
         if self._voice is not None:
-            response_builder.append_tts(f"<speaker voice='{self._voice.value}'>")
+            response_builder.set_voice(self._voice)
 
-        response_builder.append_tts("sil <[300]>")
+        response_builder.append_silence(300)
 
         for t in self._tts:
             response_builder.append_tts(t)
