@@ -91,12 +91,11 @@ class Dialog:
     async def _handle_by_triggers(self, input: Input) -> bool:
         for h in reversed(self._handlers):
             match h:
-                case TriggerHandler(h):
-                    h = cast(TriggerHandler[Any], h)
-                    result = h.trigger(input)
+                case TriggerHandler(_, action, trigger):
+                    result = trigger(input)
 
                     if result:
-                        maybe_coroutine = h.action(result)
+                        maybe_coroutine = action(result)
 
                         if maybe_coroutine is not None:
                             await maybe_coroutine

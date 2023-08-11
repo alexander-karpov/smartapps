@@ -1,13 +1,13 @@
 import faiss
 import numpy as np
-from dialoger.bert_encoder import BertEncoder, bert_encoder
+from dialoger.encoder import Encoder, encoder
 
 
 class SimilarityIndex:
-    encoder: BertEncoder
+    encoder: Encoder
     index: faiss.IndexFlatIP
 
-    def __init__(self, encoder: BertEncoder, dim):
+    def __init__(self, encoder: Encoder, dim):
         self.encoder = encoder
         self.index = faiss.IndexFlatIP(dim)
         self.phrase_to_id = {}
@@ -34,7 +34,9 @@ class SimilarityIndex:
 
         return I[np.argsort(1 - D)]
 
-    def most_similar(self, intents: list[tuple[str, ...]], text: str, range = 0.80) -> int | None:
+    def most_similar(
+        self, intents: list[tuple[str, ...]], text: str, range=0.80
+    ) -> int | None:
         intent_to_ids = [self.add(phrases) for phrases in intents]
         nearest = list(self.search(text, range))
 
@@ -42,7 +44,10 @@ class SimilarityIndex:
             return None
 
         # Сортируем интенты по позициям их фраз в массиве nearest
-        intent_to_nearest = [(i, sorted([nearest.index(id) if id in nearest else np.inf for id in ids])) for i, ids in enumerate(intent_to_ids)]
+        intent_to_nearest = [
+            (i, sorted([nearest.index(id) if id in nearest else np.inf for id in ids]))
+            for i, ids in enumerate(intent_to_ids)
+        ]
         intent_to_nearest_sorted = sorted(intent_to_nearest, key=lambda item: item[1])
 
         for i, ids_indices in intent_to_nearest_sorted:
@@ -51,4 +56,5 @@ class SimilarityIndex:
 
         return None
 
-similarity_index = SimilarityIndex(bert_encoder, 512)
+
+similarity_index = SimilarityIndex(encoder, 512)

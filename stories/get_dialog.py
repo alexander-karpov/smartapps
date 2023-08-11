@@ -4,7 +4,6 @@ from dialoger import Dialog, TextReply, Voice
 from dialoger.dialog_api import DialogAPI
 from enrichment import add_random_adjective
 from entity_parser import Entity
-from morphy import to_nomn
 
 
 class Story(Protocol):
@@ -87,7 +86,7 @@ def get_dialog(session_id: str) -> Dialog:
 
         # 🔥 button
 
-        @api.intent("начинай", include_yes=True)
+        @api.otherwise
         def _():
             story = stories[0]
             story.tell_story(api)
