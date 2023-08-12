@@ -10,7 +10,7 @@ from morphy import inflect, parse
 _client = httpx.AsyncClient()
 
 
-async def add_random_adjective(noun: str) -> str:
+async def add_random_adjective(noun: str, case: str) -> str:
     """
     Добавляет к существительному случайное прилагательное,
     если сможет его согласовать
@@ -28,10 +28,15 @@ async def add_random_adjective(noun: str) -> str:
         random_adjective,
         (
             {
-                parsed_noun.tag.case,
+                case,
                 parsed_noun.tag.gender,
                 parsed_noun.tag.number,
                 parsed_noun.tag.animacy,
+            },
+            {
+                case,
+                parsed_noun.tag.gender,
+                parsed_noun.tag.number,
             },
         ),
     )

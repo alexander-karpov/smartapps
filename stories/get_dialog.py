@@ -25,7 +25,7 @@ class AtTheLessonStory:
         @api.trigger(lambda i: i.entities())
         async def _(entities: list[Entity]):
             fruit = entities[0].nomn
-            self._fruit = await add_random_adjective(fruit)
+            self._fruit = await add_random_adjective(fruit, "nomn")
 
             self._ask_name(api)
 
