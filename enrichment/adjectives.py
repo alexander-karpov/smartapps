@@ -30,13 +30,13 @@ async def add_random_adjective(noun: str, case: str) -> str:
             {
                 case,
                 parsed_noun.tag.gender,
-                parsed_noun.tag.number,
+                parsed_noun.tag.number or "sing",
                 parsed_noun.tag.animacy,
             },
             {
                 case,
                 parsed_noun.tag.gender,
-                parsed_noun.tag.number,
+                parsed_noun.tag.number or "sing",
             },
         ),
     )

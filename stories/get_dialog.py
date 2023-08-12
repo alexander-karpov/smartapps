@@ -1,57 +1,120 @@
+from abc import ABC, abstractmethod
 from functools import lru_cache
-from typing import Optional, Protocol
-from dialoger import Dialog, TextReply, Voice
-from dialoger.dialog_api import DialogAPI
+from random import choice
+from typing import Any, Callable, Coroutine, Optional
+from dialoger import Dialog, TextReply, Voice, DialogAPI
 from enrichment import add_random_adjective
-from entity_parser import Entity
 from morphy import by_gender
 
+PLEASE_REPEAT = [
+    "Ой! Я немного отвлеклась. Что ты говоришь?",
+    "Это так необычно. Повтори, пожалуйста.",
+]
 
-class Story(Protocol):
-    def tell_story(self, api: DialogAPI) -> None:
-        ...
+StoryStep = Callable[[], None]
 
 
-class AtTheLessonStory:
+class Story(ABC):
+    """
+    Базовый класс историй
+    """
+
+    _steps: list[StoryStep]
+    _api: DialogAPI
+
+    def __init__(self, api: DialogAPI) -> None:
+        self._api = api
+        self._steps = []
+
+    @abstractmethod
+    def create_steps(self) -> list[StoryStep]:
+        """
+        Формирует список шагов истории
+        """
+
+    def start(self, last_step: StoryStep) -> None:
+        """
+        Создаёт списог шагов истории и начинает двигаться по ним
+        """
+        self._steps = self.create_steps()
+        self._steps.append(last_step)
+
+        self._steps[0]()
+
+    def _repeat_current_step(self) -> None:
+        """
+        (Повторно) заходит в текущий (пройденный) шаг истории
+        """
+        self._steps[0]()
+
+    def goto_next_step(self) -> None:
+        """
+        (Повторно) заходит в текущий (пройденный) шаг истории
+        """
+        self._steps.pop(0)
+        self._steps[0]()
+
+    def make_step(
+        self,
+        questions: str | None,
+        action: Callable[[], Coroutine[Any, Any, bool]],
+    ):
+        """
+        Создаёт шаблонный шаг истории
+        """
+        api = self._api
+
+        def step() -> None:
+            if questions:
+                api.say(questions)
+
+            @api.otherwise
+            async def _():
+                if await action():
+                    self.goto_next_step()
+
+                else:
+                    api.say(choice(PLEASE_REPEAT))
+
+                    self._repeat_current_step()
+
+        return step
+
+
+class AtTheLessonStory(Story):
+    """
+    История про ошибку на уроке географии
+    """
+
     _name: Optional[str]
     _fruit: Optional[str]
 
-    def tell_story(self, api: DialogAPI) -> None:
-        self._ask_fruit(api)
+    def create_steps(self):
+        return [
+            self.make_step("Назови что-нибудь съедобное", self._fill_fruit),
+            self.make_step("Назови имя твоего друга или знакомого", self._fill_name),
+            self._tell_story,
+        ]
 
-    def _ask_fruit(self, api: DialogAPI) -> None:
-        api.say("Назови что-нибудь съедобное")
+    async def _fill_fruit(self) -> bool:
+        entities = self._api.input().entities()
 
-        @api.trigger(lambda i: i.entities())
-        async def _(entities: list[Entity]):
+        if entities:
             fruit = entities[0].nomn
             self._fruit = await add_random_adjective(fruit, "nomn")
 
-            self._ask_name(api)
+            return True
 
-        @api.otherwise
-        def _():
-            api.say("Ой! Я немного отвлеклась. Что ты говоришь?")
+        return False
 
-            self._ask_fruit(api)
+    async def _fill_name(self) -> bool:
+        i = self._api.input()
+        self._name = i.first_name or i.last_name
 
-    def _ask_name(self, api: DialogAPI) -> None:
-        api.say("Назови имя твоего друга или знакомого")
+        return bool(self._name)
 
-        @api.trigger(lambda i: i.first_name or i.last_name)
-        async def _(name: str):
-            self._name = name
-
-            self._tell_story(api)
-
-        @api.otherwise
-        def _():
-            api.say("Ой! Интересное имя. Повтори, пожалуйста.")
-
-            self._ask_name(api)
-
-    def _tell_story(self, api: DialogAPI) -> None:
-        api.say(
+    def _tell_story(self) -> None:
+        self._api.say(
             "Вот одна история.",
             "Однажды на уроке географии учительница задает вопрос:",
             "\n- Ребята,",
@@ -67,9 +130,6 @@ class AtTheLessonStory:
             f"И тут {self._name} на третьем ряду вспоминает ответ и говорит:",
             f"\n- А! Я знаю! Это {self._fruit}!",
             "\nВесь класс рассмеялся, а учительница поняла, что вопросы по географии нам нужно повторить еще раз.",
-        )
-
-        api.say(
             "",
             TextReply(
                 f"\n- {self._fruit}? Прямо так и {by_gender(self._name or '', 'сказал', 'сказала', 'сказал')}?",
@@ -78,13 +138,15 @@ class AtTheLessonStory:
             "\n- Да, именно так, чистая правда.",
         )
 
+        self.goto_next_step()
+
 
 @lru_cache(maxsize=64)
 def get_dialog(session_id: str) -> Dialog:
     dialog = Dialog(stopwords=["алиса"])
     api = DialogAPI(dialog)
 
-    stories: list[Story] = [AtTheLessonStory()]
+    stories: list[Story] = [AtTheLessonStory(api), AtTheLessonStory(api)]
 
     @api.new_session
     def _():
@@ -96,10 +158,32 @@ def get_dialog(session_id: str) -> Dialog:
 
         # 🔥 button
 
-        @api.otherwise
-        def _():
-            story = stories[0]
-            story.tell_story(api)
+        def end_current_story():
+            api.say("\n\nХорошая история.")
+
+            if stories:
+                api.say("Давай вспомним ещё одну. Поехали?")
+
+                api.otherwise(start_next_story)
+            else:
+                api.say(
+                    TextReply("Тут и сказки конец. А кто слушал – молодец", end=True)
+                )
+
+        def start_next_story():
+            story = stories.pop(0)
+
+            if story:
+                story.start(end_current_story)
+            else:
+                api.say(
+                    TextReply(
+                        "Ой! Кажется, у меня молоко убежало! Мне пора. Пока, бавый",
+                        end=True,
+                    )
+                )
+
+        api.otherwise(start_next_story)
 
     return dialog
 
