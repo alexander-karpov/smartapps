@@ -19,13 +19,13 @@ class AtLessonStory(Story):
     Все класс рассмеялся, а учительница поняла, что вопросы из географии им нужно повторить еще раз.
     """
 
-    _name: Optional[str]
-    _fruit: Optional[str]
+    _name: str
+    _fruit: str
 
     def create_steps(self):
         return [
-            self.make_step("Назови что-нибудь съедобное", self._fill_fruit),
             self.make_step("Назови имя твоего друга или знакомого", self._fill_name),
+            self.make_step("Назови что-нибудь съедобное", self._fill_fruit),
             self._tell_story,
         ]
 
@@ -42,7 +42,10 @@ class AtLessonStory(Story):
 
     async def _fill_name(self) -> bool:
         i = self._api.input()
-        self._name = i.first_name or i.last_name
+        name = i.first_name or i.last_name
+
+        if name:
+            self._name = name
 
         return bool(self._name)
 
@@ -65,7 +68,7 @@ class AtLessonStory(Story):
             "Весь класс рассмеялся, а учительница поняла, что вопросы по географии нам нужно повторить еще раз.",
             "",
             TextReply(
-                f"- {self._fruit}? Прямо так и {by_gender(self._name or '', 'сказал', 'сказала', 'сказал')}?",
+                f"- {self._fruit}? Прямо так и {by_gender(self._name or '', 'сказал', '', 'а', 'о')}?",
                 voice=Voice.ZAHAR_GPU,
             ),
             "- Да, именно так, чистая правда.",
@@ -95,16 +98,15 @@ class InZooStory(Story):
     После этого случая страх повстречать смотрительницу в полночь заставил их глубоко переосмыслить идею проведения непредумышленных ночных прогулок в зоопарке.
     """
 
-    _animal: str | None
-    _animal_adj: str | None
-    _wild_animal: str | None
-    _item: str | None
+    _animal: str
+    _wild_animal: str
+    _item: str
 
     def create_steps(self):
         return [
             self.make_step("Назови какое-нибудь животное", self._fill_animal),
             self.make_step(
-                "Теперь назови какое-нибудь животное с отсрыми зубами",
+                "Теперь назови какое-нибудь животное с острыми зубами",
                 self._fill_wild_animal,
             ),
             self.make_step(
@@ -118,7 +120,6 @@ class InZooStory(Story):
 
         if entities:
             self._animal = entities[0].subject[0]
-            self._animal_adj = await add_random_adjective(self._animal, "nomn")
 
             return True
 
@@ -149,7 +150,7 @@ class InZooStory(Story):
         item_ablt_plur = inflect(self._item or "статуя", ({"ablt", "plur"},))
 
         self._api.say(
-            "Вспомнила такую историю.",
+            "Вспомнила историю.",
             "Однажды в полночь в зоопарк решили наведаться трое друзей - Вася, Петя и Миша.",
             f"Они забрались через забор, чтобы пообщаться с {animal_ablt_plur}, когда все работники уже ушли.",
             "Внезапно, из ниоткуда появилась смотрительница зоопарка - страшная старуха с косой.",
@@ -167,6 +168,8 @@ class InZooStory(Story):
         @self._api.otherwise
         async def _():
             item_accs_plur = inflect(self._item or "статуя", ({"accs", "plur"},))
+            animal_adj = await add_random_adjective(self._animal, "nomn")
+            wild_animal_adj = await add_random_adjective(self._wild_animal, "nomn")
 
             self._api.say(
                 f"Старуха медленно идет в их сторону, осматривая пустующий зоопарк. Подойдя ближе, она глядит на «{item_accs_plur}» и кричит:",
@@ -174,28 +177,30 @@ class InZooStory(Story):
                 "Она подходит к Васе и спрашивает:",
                 f"- Ты {self._item}?",
                 "Вася не моргая отвечает на скорую руку:"
-                f"- Нет, я {self._animal_adj}, даже если я и не двигаюсь.",
+                f"- Нет, я {animal_adj}, даже если я и не двигаюсь.",
                 f"- А ты {self._item}?",
                 "Петя ответил в тон:",
-                f"- Нет, я {by_gender(self._wild_animal or 'леопард', 'равнодушный', 'равнодушная', 'равнодушное')} {self._wild_animal or 'леопард'}, и могу укусить.",
+                f"- Нет, я {wild_animal_adj} и могу вас укусить.",
                 "",
                 TextReply(
-                    "- Надеюсь, он не укусил бабушку?",
+                    "- Надеюсь, он не укусил бедную бабушку?",
                     voice=Voice.ZAHAR_GPU,
                 ),
-                "- К счастью, нет. Рассказать, что было дальше?",
+                "- К счастью, нет, не укусил. Рассказать, что было дальше?",
             )
 
             @self._api.otherwise
             async def _():
                 item_nomn_plur = inflect(self._item or "статуя", ({"nomn", "plur"},))
+                item_adj = await add_random_adjective(self._item, "nomn")
+                common_item = by_gender(self._item, "обычн", "ый", "ая", "ое")
 
                 self._api.say(
                     "Смотрительница на минуту задумалась, почесала косой по дереву, а затем идет к Мише и спрашивает:",
                     f"- Так и ты, наверное, тоже не {self._item}?",
                     "Миша отвечает:",
-                    f"- А я – правда, {self._item}!",
-                    "-Смотрительница от злости выдала жуткий лающий смех и продолжала поиск воришек.",
+                    f"- Я, правда, {common_item} {item_adj}!",
+                    "Смотрительница от злости выдала жуткий лающий смех и продолжала поиск воришек.",
                     "После этого случая, страх повстречать смотрительницу заставил их получше подумать, стоит ли гулять в зоопарке ночью.",
                     TextReply(
                         f"- Жуткая история. Мне теперь всю ночь будут {item_nomn_plur} сниться.",

@@ -88,14 +88,14 @@ def get_tag(word: str) -> OpencorporaTag:
     return parsed[0].tag
 
 
-def by_gender(word: str, masc: str, femn: str, neut: str) -> str:
+def by_gender(word: str, base: str, masc: str, femn: str, neut: str) -> str:
     """
     Выбор согласованного по полу слова
     """
     match get_tag(word).gender:
         case "masc":
-            return masc
+            return base + masc
         case "femn":
-            return femn
+            return base + femn
         case _:
-            return neut
+            return base + neut
