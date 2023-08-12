@@ -97,5 +97,7 @@ def by_gender(word: str, base: str, masc: str, femn: str, neut: str) -> str:
             return base + masc
         case "femn":
             return base + femn
-        case _:
+        case "neut":
             return base + neut
+        case _:
+            return base + masc
