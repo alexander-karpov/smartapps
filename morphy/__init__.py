@@ -54,9 +54,7 @@ def parse(word: str) -> list[Parse]:
     return _morph.parse(word)
 
 
-def inflect(
-    word: str, grs_variants: tuple[set[str], ...]
-) -> tuple[str, OpencorporaTag] | None:
+def inflect(word: str, grs_variants: tuple[set[str], ...]) -> str:
     parsed = parse(word)
 
     for grs in grs_variants:
@@ -64,9 +62,9 @@ def inflect(
             inflected = p.inflect(grs)
 
             if inflected:
-                return (inflected.word, inflected.tag)
+                return inflected.word
 
-    return None
+    return word
 
 
 def to_nomn(word: str) -> str:

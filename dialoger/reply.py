@@ -39,6 +39,8 @@ class TextReply(Reply):
                     raise ValueError(f"Invalid type for parts item: {part}")
 
     def append_to(self, response_builder: ResponseBuilder) -> None:
+        response_builder.append_new_line()
+
         for t in self._text:
             response_builder.append_text(t)
 

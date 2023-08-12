@@ -50,6 +50,10 @@ class ResponseBuilder:
         if self._tts:
             self._tts.append(f"sil <[{ms}]>")
 
+    def append_new_line(self) -> None:
+        if self._text:
+            self._text.append("\n")
+
     def append_image(self, image_id: str) -> None:
         self._images.append(image_id)
 

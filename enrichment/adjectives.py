@@ -24,27 +24,22 @@ async def add_random_adjective(noun: str, case: str) -> str:
 
     random_adjective = choice(adjectives)
 
-    in_same_case = inflect(
+    case_consistent_adjective = inflect(
         random_adjective,
         (
             {
                 case,
-                parsed_noun.tag.gender,
+                parsed_noun.tag.gender or "masc",
                 parsed_noun.tag.number or "sing",
                 parsed_noun.tag.animacy,
             },
             {
                 case,
-                parsed_noun.tag.gender,
+                parsed_noun.tag.gender or "masc",
                 parsed_noun.tag.number or "sing",
             },
         ),
     )
-
-    if not in_same_case:
-        return noun
-
-    case_consistent_adjective, _ = in_same_case
 
     return f"{case_consistent_adjective} {noun}"
 
