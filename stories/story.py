@@ -7,7 +7,7 @@ from typing import Any, Callable, Coroutine
 from dialoger import DialogAPI
 from entity_parser import Entity
 
-StoryStep = Callable[[], None]
+StoryStep = Callable[[], Coroutine[Any, Any, None]]
 
 
 class Story(ABC):
@@ -23,32 +23,32 @@ class Story(ABC):
         self._steps = []
 
     @abstractmethod
-    def create_steps(self) -> list[StoryStep]:
+    def create_story_steps(self) -> list[StoryStep]:
         """
         Формирует список шагов истории
         """
 
-    def start(self, last_step: StoryStep) -> None:
+    async def start(self, last_step: StoryStep) -> None:
         """
         Создаёт список шагов истории и начинает двигаться по ним
         """
-        self._steps = self.create_steps()
+        self._steps = self.create_story_steps()
         self._steps.append(last_step)
 
-        self._steps[0]()
+        await self._steps[0]()
 
-    def _repeat_current_step(self) -> None:
+    async def _repeat_current_step(self) -> None:
         """
         (Повторно) заходит в текущий (пройденный) шаг истории
         """
-        self._steps[0]()
+        await self._steps[0]()
 
-    def goto_next_step(self) -> None:
+    async def goto_next_step(self) -> None:
         """
         Переход к следующему шагу. Если текущий шаг выполнен успешно
         """
         self._steps.pop(0)
-        self._steps[0]()
+        await self._steps[0]()
 
     def make_step(
         self,
@@ -60,21 +60,21 @@ class Story(ABC):
         """
         api = self._api
 
-        def step() -> None:
+        async def step() -> None:
             if questions:
                 api.say(questions)
 
             @api.otherwise
             async def _():
                 if await action():
-                    self.goto_next_step()
+                    await self.goto_next_step()
 
                 else:
                     api.say(
                         "Я услышала что-то не то. Повтори, пожалуйста.",
                     )
 
-                    self._repeat_current_step()
+                    await self._repeat_current_step()
 
         return step
 

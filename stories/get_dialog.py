@@ -2,7 +2,7 @@ from functools import lru_cache
 from dialoger import Dialog, TextReply, Voice, DialogAPI
 from enrichment import add_random_adjective
 from morphy import by_gender, inflect
-from stories.story import Story
+from stories.story import Story, StoryStep
 
 
 class AtLessonStory(Story):
@@ -21,7 +21,7 @@ class AtLessonStory(Story):
     _name: str
     _fruit: str
 
-    def create_steps(self):
+    def create_story_steps(self) -> list[StoryStep]:
         return [
             self.make_step("Назови имя твоего друга или знакомого.", self._fill_name),
             self.make_entity_step(
@@ -69,7 +69,7 @@ class AtLessonStory(Story):
             "- Да, именно так, чистая правда.",
         )
 
-        self.goto_next_step()
+        await self.goto_next_step()
 
 
 class InZooStory(Story):
@@ -97,7 +97,7 @@ class InZooStory(Story):
     _wild_animal: str
     _item: str
 
-    def create_steps(self):
+    def create_story_steps(self):
         return [
             self.make_entity_step(
                 "Назови какое-нибудь животное.",
@@ -179,7 +179,7 @@ class InZooStory(Story):
                     "- Да. До сих пор не пойму, как им удалось меня обмануть.",
                 )
 
-                self.goto_next_step()
+                await self.goto_next_step()
 
 
 @lru_cache(maxsize=64)
@@ -202,7 +202,7 @@ def get_dialog(session_id: str) -> Dialog:
 
         # 🔥 button дальше
 
-        def end_current_story():
+        async def end_current_story():
             api.say("Вот такая история.")
 
             if stories:
@@ -214,11 +214,11 @@ def get_dialog(session_id: str) -> Dialog:
                     TextReply("Тут и сказки конец. А кто слушал – молодец", end=True)
                 )
 
-        def start_next_story():
+        async def start_next_story():
             story = stories.pop(0)
 
             if story:
-                story.start(end_current_story)
+                await story.start(end_current_story)
             else:
                 api.say(
                     TextReply(
