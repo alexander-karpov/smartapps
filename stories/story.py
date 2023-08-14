@@ -30,7 +30,7 @@ class Story(ABC):
 
     def start(self, last_step: StoryStep) -> None:
         """
-        Создаёт списог шагов истории и начинает двигаться по ним
+        Создаёт список шагов истории и начинает двигаться по ним
         """
         self._steps = self.create_steps()
         self._steps.append(last_step)

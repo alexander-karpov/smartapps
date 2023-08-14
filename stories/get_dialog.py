@@ -24,20 +24,12 @@ class AtLessonStory(Story):
     def create_steps(self):
         return [
             self.make_step("Назови имя твоего друга или знакомого.", self._fill_name),
-            self.make_step("Назови что-нибудь съедобное.", self._fill_fruit),
+            self.make_entity_step(
+                "Назови что-нибудь съедобное.",
+                lambda e: setattr(self, "_fruit", e.nomn),
+            ),
             self._tell_story,
         ]
-
-    async def _fill_fruit(self) -> bool:
-        entities = self._api.input().entities()
-
-        if entities:
-            fruit = entities[0].nomn
-            self._fruit = await add_random_adjective(fruit, "nomn")
-
-            return True
-
-        return False
 
     async def _fill_name(self) -> bool:
         i = self._api.input()
@@ -46,9 +38,13 @@ class AtLessonStory(Story):
         if name:
             self._name = name
 
-        return bool(self._name)
+            return True
 
-    def _tell_story(self) -> None:
+        return False
+
+    async def _tell_story(self) -> None:
+        fruit_adj = await add_random_adjective(self._fruit, "nomn")
+
         self._api.say(
             "Вот одна история.",
             "Однажды на уроке географии учительница задает вопрос:",
@@ -63,11 +59,11 @@ class AtLessonStory(Story):
             ", - говорит учительница,",
             " - это не бездна, а географическое явление.",
             f"И тут {self._name} на третьем ряду вспоминает ответ и говорит:",
-            f"- А! Я знаю! Это {self._fruit}!",
+            f"- А! Я знаю! Это {fruit_adj}!",
             "Весь класс рассмеялся, а учительница поняла, что вопросы по географии нам нужно повторить еще раз.",
             "",
             TextReply(
-                f"- {self._fruit}? Прямо так и {by_gender(self._name or '', 'сказал', '', 'а', 'о')}?",
+                f"- {fruit_adj}? Прямо так и {by_gender(self._name or '', 'сказал', '', 'а', 'о')}?",
                 voice=Voice.ZAHAR_GPU,
             ),
             "- Да, именно так, чистая правда.",
