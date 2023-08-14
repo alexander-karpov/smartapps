@@ -1,5 +1,4 @@
 from functools import lru_cache
-from typing import Optional
 from dialoger import Dialog, TextReply, Voice, DialogAPI
 from enrichment import add_random_adjective
 from morphy import by_gender, inflect
@@ -24,8 +23,8 @@ class AtLessonStory(Story):
 
     def create_steps(self):
         return [
-            self.make_step("Назови имя твоего друга или знакомого", self._fill_name),
-            self.make_step("Назови что-нибудь съедобное", self._fill_fruit),
+            self.make_step("Назови имя твоего друга или знакомого.", self._fill_name),
+            self.make_step("Назови что-нибудь съедобное.", self._fill_fruit),
             self._tell_story,
         ]
 
@@ -104,50 +103,24 @@ class InZooStory(Story):
 
     def create_steps(self):
         return [
-            self.make_step("Назови какое-нибудь животное", self._fill_animal),
-            self.make_step(
-                "Теперь назови какое-нибудь животное с острыми зубами",
-                self._fill_wild_animal,
+            self.make_entity_step(
+                "Назови какое-нибудь животное.",
+                lambda i: setattr(self, "_animal", i.subject[0]),
             ),
-            self.make_step(
-                "Назови любой предмет рядом с тобой или на улице", self._fill_item
+            self.make_entity_step(
+                "Теперь назови какое-нибудь животное с острыми зубами.",
+                lambda i: setattr(self, "_wild_animal", i.subject[0]),
+            ),
+            self.make_entity_step(
+                "Назови любой предмет рядом с тобой или на улице.",
+                lambda i: setattr(self, "_item", i.subject[0]),
             ),
             self._tell_story,
         ]
 
-    async def _fill_animal(self) -> bool:
-        entities = self._api.input().entities()
-
-        if entities:
-            self._animal = entities[0].subject[0]
-
-            return True
-
-        return False
-
-    async def _fill_wild_animal(self) -> bool:
-        entities = self._api.input().entities()
-
-        if entities:
-            self._wild_animal = entities[0].subject[0]
-
-            return True
-
-        return False
-
-    async def _fill_item(self) -> bool:
-        entities = self._api.input().entities()
-
-        if entities:
-            self._item = entities[0].subject[0]
-
-            return True
-
-        return False
-
     def _tell_story(self) -> None:
         animal_ablt_plur = inflect(self._animal or "носорог", ({"ablt", "plur"},))
-        item_ablt_plur = inflect(self._item or "статуя", ({"ablt", "plur"},))
+        item_ablt_plur = inflect(self._item, ({"ablt", "plur"},))
 
         self._api.say(
             "Вспомнила историю.",
@@ -167,7 +140,7 @@ class InZooStory(Story):
 
         @self._api.otherwise
         async def _():
-            item_accs_plur = inflect(self._item or "статуя", ({"accs", "plur"},))
+            item_accs_plur = inflect(self._item, ({"accs", "plur"},))
             animal_adj = await add_random_adjective(self._animal, "nomn")
             wild_animal_adj = await add_random_adjective(self._wild_animal, "nomn")
 
@@ -192,7 +165,7 @@ class InZooStory(Story):
 
             @self._api.otherwise
             async def _():
-                item_nomn_plur = inflect(self._item or "статуя", ({"nomn", "plur"},))
+                item_nomn_plur = inflect(self._item, ({"nomn", "plur"},))
                 item_adj = await add_random_adjective(self._item, "nomn")
                 common_item = by_gender(self._item, "обычн", "ый", "ая", "ое")
 
@@ -215,6 +188,9 @@ class InZooStory(Story):
 
 @lru_cache(maxsize=64)
 def get_dialog(session_id: str) -> Dialog:
+    """
+    Создаёт новый диалог «Самые смешные истории»
+    """
     dialog = Dialog(stopwords=["алиса"])
     api = DialogAPI(dialog)
 
@@ -258,20 +234,3 @@ def get_dialog(session_id: str) -> Dialog:
         api.otherwise(start_next_story)
 
     return dialog
-
-
-"""
-
-
-1. Извини, отвлекся, повторишь?
-2. Прошу прощения, не расслышал. Скажи еще раз?
-3. Ой, задумался, повтори, пожалуйста?
-4. Извини, не уловил, еще раз, пожалуйста?
-5. Прости, пропустил, что сказал?
-6. Не слышал, мог бы повторить?
-7. Опять, пожалуйста, отвлекся.
-
-Context: [ p:1989 c:145 t:2134 ]
-
-© ChatGPT-4.0
-"""

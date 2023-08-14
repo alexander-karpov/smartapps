@@ -1,14 +1,13 @@
+"""
+Базовый класс историй
+"""
+
 from abc import ABC, abstractmethod
-from random import choice
 from typing import Any, Callable, Coroutine
 from dialoger import DialogAPI
+from entity_parser import Entity
 
 StoryStep = Callable[[], None]
-
-PLEASE_REPEAT = [
-    "Ой! Я немного отвлеклась. Что ты говоришь?",
-    "Это так необычно. Повтори, пожалуйста.",
-]
 
 
 class Story(ABC):
@@ -46,7 +45,7 @@ class Story(ABC):
 
     def goto_next_step(self) -> None:
         """
-        (Повторно) заходит в текущий (пройденный) шаг истории
+        Переход к следующему шагу. Если текущий шаг выполнен успешно
         """
         self._steps.pop(0)
         self._steps[0]()
@@ -71,8 +70,28 @@ class Story(ABC):
                     self.goto_next_step()
 
                 else:
-                    api.say(choice(PLEASE_REPEAT))
+                    api.say(
+                        "Я услышала что-то не то. Повтори, пожалуйста.",
+                    )
 
                     self._repeat_current_step()
 
         return step
+
+    def make_entity_step(self, questions: str | None, action: Callable[[Entity], None]):
+        """
+        Создаёт шаблонный шаг истории, ожидающий на вход сущность
+        """
+        api = self._api
+
+        async def entity_action() -> bool:
+            entities = api.input().entities()
+
+            if entities:
+                action(entities[0])
+
+                return True
+
+            return False
+
+        return self.make_step(questions, entity_action)
