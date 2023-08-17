@@ -54,6 +54,7 @@ class Story(ABC):
         self,
         questions: str | None,
         action: Callable[[], Coroutine[Any, Any, bool]],
+        unsuitable_input_message: str | None = None,
     ):
         """
         Создаёт шаблонный шаг истории
@@ -71,7 +72,8 @@ class Story(ABC):
 
                 else:
                     api.say(
-                        "Я услышала что-то не то. Повтори, пожалуйста.",
+                        unsuitable_input_message
+                        or "Я услышала что-то не то. Повтори, пожалуйста.",
                     )
 
                     await self._repeat_current_step()

@@ -3,3 +3,4 @@
 """
 
 from enrichment.adjectives import *
+from enrichment.ruwordnet import *

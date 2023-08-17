@@ -1,6 +1,6 @@
 from functools import lru_cache
 from dialoger import Dialog, TextReply, Voice, DialogAPI
-from enrichment import add_random_adjective
+from enrichment import add_random_adjective, random_hypernym
 from morphy import by_gender, inflect
 from stories.story import Story, StoryStep
 
@@ -19,14 +19,18 @@ class AtLessonStory(Story):
     """
 
     _name: str
-    _fruit: str
+    _item: str
 
     def create_story_steps(self) -> list[StoryStep]:
         return [
-            self.make_step("Назови имя твоего друга или знакомого.", self._fill_name),
             self.make_entity_step(
-                "Назови что-нибудь съедобное.",
-                lambda e: setattr(self, "_fruit", e.nomn),
+                "Назови любой предмет рядом с тобой или на улице.",
+                lambda e: setattr(self, "_item", e.nomn),
+            ),
+            self.make_step(
+                "Назови имя твоего друга или знакомого.",
+                self._fill_name,
+                unsuitable_input_message="Это не похоже на настоящее имя.",
             ),
             self._tell_story,
         ]
@@ -43,7 +47,9 @@ class AtLessonStory(Story):
         return False
 
     async def _tell_story(self) -> None:
-        fruit_adj = await add_random_adjective(self._fruit, "nomn")
+        item_hypernym = random_hypernym(self._item) or self._item
+        fall_in_love = by_gender(self._name or "", "влюбил", "ся", "ась", "ось")
+        name_it = by_gender(self._name or "", "", "он", "она", "оно")
 
         self._api.say(
             "Вот одна история.",
@@ -51,22 +57,22 @@ class AtLessonStory(Story):
             "- Ребята,",
             "как называется большая пустыня в Африке?",
             "- Сах+ара!",
-            " - отвечает один мальчик.",
+            "- отвечает один мальчик.",
             "- Отлично, а как называется самая глубокая бездна в океане?",
-            "- Бермудский треугольник!",
+            f"- {self._item}",
             " - отвечает другой.",
-            "- Нет-нет",
-            ", - говорит учительница,",
-            " - это не бездна, а географическое явление.",
-            f"И тут {self._name} на третьем ряду вспоминает ответ и говорит:",
-            f"- А! Я знаю! Это {fruit_adj}!",
+            "- Нет-нет,",
+            "- говорит учительница,",
+            f"{self._item} - это не бездна, а {item_hypernym}.",
+            "На это девочка на третьем ряду встаёт и говорит:",
+            f"- А я знаю! {self._name} – {fall_in_love}!",
             "Весь класс рассмеялся, а учительница поняла, что вопросы по географии нам нужно повторить еще раз.",
             "",
             TextReply(
-                f"- {fruit_adj}? Прямо так и {by_gender(self._name or '', 'сказал', '', 'а', 'о')}?",
+                f"- {fall_in_love}? Прямо так и сказала?",
                 voice=Voice.ZAHAR_GPU,
             ),
-            "- Да, именно так, чистая правда.",
+            f"- Да, именно так. И ничего {name_it} не {fall_in_love}.",
         )
 
         await self.goto_next_step()

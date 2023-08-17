@@ -9,3 +9,10 @@ Colab с MUSE-3 https://colab.research.google.com/drive/1WgVFdRv2Y15DS9OJpa2H6Px
 Не совместима с python3.10 по причине невозможности собрать DAWG
 Есть починеный DAWG2, https://github.com/pymorphy2-fork/DAWG
 Но найти pip-пакет pymorphy2[fast] с исправленным DAWG я не смог
+
+## ruwordnet
+https://github.com/avidale/python-ruwordnet
+```
+pip install ruwordnet
+!ruwordnet download
+```
