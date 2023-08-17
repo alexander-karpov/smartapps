@@ -3,11 +3,12 @@
 """
 
 from abc import ABC, abstractmethod
+from asyncio import iscoroutine
 from typing import Any, Callable, Coroutine
 from dialoger import DialogAPI
 from entity_parser import Entity
 
-StoryStep = Callable[[], Coroutine[Any, Any, None]]
+StoryStep = Callable[[], Coroutine[Any, Any, None]] | Callable[[], None]
 
 
 class Story(ABC):
@@ -35,20 +36,26 @@ class Story(ABC):
         self._steps = self.create_story_steps()
         self._steps.append(last_step)
 
-        await self._steps[0]()
+        await self._call_current_step()
 
-    async def _repeat_current_step(self) -> None:
+    async def _call_current_step(self):
         """
         (Повторно) заходит в текущий (пройденный) шаг истории
         """
-        await self._steps[0]()
+        maybe_coroutine = self._steps[0]()
+
+        if iscoroutine(maybe_coroutine):
+            await maybe_coroutine
 
     async def goto_next_step(self) -> None:
         """
         Переход к следующему шагу. Если текущий шаг выполнен успешно
         """
         self._steps.pop(0)
-        await self._steps[0]()
+        maybe_coroutine = self._steps[0]()
+
+        if iscoroutine(maybe_coroutine):
+            await maybe_coroutine
 
     def make_step(
         self,
@@ -76,7 +83,7 @@ class Story(ABC):
                         or "Я услышала что-то не то. Повтори, пожалуйста.",
                     )
 
-                    await self._repeat_current_step()
+                    await self._call_current_step()
 
         return step
 

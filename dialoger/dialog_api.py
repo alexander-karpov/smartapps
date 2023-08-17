@@ -104,20 +104,6 @@ class DialogAPI:
 
         return action
 
-    def new_session(self, action: Action):
-        """
-        Обработчик первого запрос
-        """
-        self._dialog.append_handler(
-            TriggerHandler(
-                trigger=lambda i: i.is_new_session,
-                action=lambda _: action(),
-                time_to_live=1,
-            )
-        )
-
-        return action
-
     def say(self, *replies: Reply | str | tuple[str, str]):
         """
         Добавляет ответ на запрос. Вызывается внутри обработчика

@@ -103,7 +103,7 @@ class InZooStory(Story):
     _wild_animal: str
     _item: str
 
-    def create_story_steps(self):
+    def create_story_steps(self) -> list[StoryStep]:
         return [
             self.make_entity_step(
                 "Назови какое-нибудь животное.",
@@ -198,7 +198,7 @@ def get_dialog(session_id: str) -> Dialog:
 
     stories: list[Story] = [AtLessonStory(api), InZooStory(api)]
 
-    @api.new_session
+    @api.otherwise
     def _():
         api.say(
             "Привет. С тобой часто приключаются весёлые истории? Со мной – постоянно. Хочешь, расскажу тебе что-нибудь?",
