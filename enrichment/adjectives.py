@@ -10,7 +10,7 @@ from morphy import inflect, parse
 _client = httpx.AsyncClient()
 
 
-async def add_random_adjective(noun: str, case: str) -> str:
+async def add_random_adjective(noun: str, grs: set[str]) -> str:
     """
     Добавляет к существительному случайное прилагательное,
     если сможет его согласовать
@@ -23,25 +23,16 @@ async def add_random_adjective(noun: str, case: str) -> str:
         return noun
 
     random_adjective = choice(adjectives)
+    union_grs = {
+        gr for gr in [parsed_noun.tag.gender, parsed_noun.tag.animacy] if gr
+    } | grs
 
     case_consistent_adjective = inflect(
         random_adjective,
-        (
-            {
-                case,
-                parsed_noun.tag.gender or "masc",
-                parsed_noun.tag.number or "sing",
-                parsed_noun.tag.animacy,
-            },
-            {
-                case,
-                parsed_noun.tag.gender or "masc",
-                parsed_noun.tag.number or "sing",
-            },
-        ),
+        (union_grs, grs),
     )
 
-    return f"{case_consistent_adjective} {noun}"
+    return f"{case_consistent_adjective} {inflect(noun, (grs, ))}"
 
 
 @alru_cache(1024)

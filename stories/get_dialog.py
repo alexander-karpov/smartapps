@@ -52,7 +52,7 @@ class AtLessonStory(Story):
         name_it = by_gender(self._name or "", "", "он", "она", "оно")
 
         self._api.say(
-            "Вот одна история.",
+            # "Вот одна история.",
             "Однажды на уроке географии учительница задает вопрос:",
             "- Ребята,",
             "как называется большая пустыня в Африке?",
@@ -125,7 +125,7 @@ class InZooStory(Story):
         item_ablt_plur = inflect(self._item, ({"ablt", "plur"},))
 
         self._api.say(
-            "Вспомнила историю.",
+            # "Вспомнила историю.",
             "Однажды в полночь в зоопарк решили наведаться трое друзей - Вася, Петя и Миша.",
             f"Они забрались через забор, чтобы пообщаться с {animal_ablt_plur}, когда все работники уже ушли.",
             "Внезапно, из ниоткуда появилась смотрительница зоопарка - страшная старуха с косой.",
@@ -143,8 +143,8 @@ class InZooStory(Story):
         @self._api.otherwise
         async def _():
             item_accs_plur = inflect(self._item, ({"accs", "plur"},))
-            animal_adj = await add_random_adjective(self._animal, "nomn")
-            wild_animal_adj = await add_random_adjective(self._wild_animal, "nomn")
+            animal_adj = await add_random_adjective(self._animal, {"nomn"})
+            wild_animal_adj = await add_random_adjective(self._wild_animal, {"nomn"})
 
             self._api.say(
                 f"Старуха медленно идет в их сторону, осматривая пустующий зоопарк. Подойдя ближе, она глядит на «{item_accs_plur}» и кричит:",
@@ -168,7 +168,7 @@ class InZooStory(Story):
             @self._api.otherwise
             async def _():
                 item_nomn_plur = inflect(self._item, ({"nomn", "plur"},))
-                item_adj = await add_random_adjective(self._item, "nomn")
+                item_adj = await add_random_adjective(self._item, {"nomn"})
                 common_item = by_gender(self._item, "обычн", "ый", "ая", "ое")
 
                 self._api.say(
@@ -178,11 +178,116 @@ class InZooStory(Story):
                     f"- Я, правда, {common_item} {item_adj}!",
                     "Смотрительница от злости выдала жуткий лающий смех и продолжала поиск воришек.",
                     "После этого случая, страх повстречать смотрительницу заставил их получше подумать, стоит ли гулять в зоопарке ночью.",
+                    "",
                     TextReply(
                         f"- Жуткая история. Мне теперь всю ночь будут {item_nomn_plur} сниться.",
                         voice=Voice.ZAHAR_GPU,
                     ),
                     "- Да. До сих пор не пойму, как им удалось меня обмануть.",
+                )
+
+                await self.goto_next_step()
+
+
+class ProverbsStory(Story):
+    """
+    Однажды три маленьких друга, Вовочка, Мария и Игорь, решили устроить соревнование, кто лучше всего знает пословицы. Вовочка первым начал:
+    - У меня такая пословица: "Лапу давай, слона топчешь!"
+    Мария и Игорь удивились и спросили, что она значит. На что Вовочка с умным видом ответил:
+    - Вы, видимо, не в курсе! Это значит, что сначала делай все по-большому, а потом уже забирай маленькие штуки.
+    Пониже плеча Вовочке была, Мария тоже не устала:
+    - Вот моя пословица: "Кот по саблям, а рыбку нет."
+    Вовочка и Игорь ломали голову над этой загадкой. Мария объяснила, держа руку на бедре:
+    - Это значит, что многие пытаются найти пословицу с котом и рыбой, но у меня вот такая уникальная!
+    Наконец, очередь дошла до Игоря. Тот с некоторой гордостью заявил:
+    - Моя пословица: "На хорошо и шашечки сойдут!"
+    Мария и Вовочка спросили, что же она означает на самом деле.
+    Игорь, задумавшись, ответил:
+    - Ну, это когда человек не может в шахматы играть, но зато в шашки самый где надо!
+    Все трое рассмеялись и решили, что им все повернулось классом, и это самые удачливые пословицы в мире!
+    """
+
+    _big_animal: str
+    _little_animal: str
+    _sweet: str
+
+    def create_story_steps(self) -> list[StoryStep]:
+        return [
+            self.make_entity_step(
+                "Назови большое животное.",
+                lambda i: setattr(self, "_big_animal", i.subject[0]),
+            ),
+            self.make_entity_step(
+                "Назови маленькое животное.",
+                lambda i: setattr(self, "_little_animal", i.subject[0]),
+            ),
+            self.make_entity_step(
+                "Назови что-нибудь сладкое.",
+                lambda i: setattr(self, "_sweet", i.subject[0]),
+            ),
+            self._tell_story,
+        ]
+
+    async def _tell_story(self):
+        api = self._api
+
+        big_animal_accs_plur = inflect(self._big_animal, ({"accs", "plur"},))
+        big_animal_plur = inflect(self._big_animal, ({"nomn", "plur"},))
+
+        sweet_gen = inflect(self._sweet, ({"gent"},))
+
+        api.say(
+            "Однажды три маленьких друга, Вова, Маша и Игорь, решили устроить соревнование, кто лучше всего знает пословицы. Вова первым начал:",
+            f"- У меня такая пословица: «Сначала лови больших {big_animal_accs_plur}, потом собирай мелкую пах+учку.»",
+            "Маша и Игорь удивились и спросили, что она значит. На что Вова с умным видом ответил:",
+            "- Вы, видимо, не в курсе! Это значит, что сначала делай все по-большому, а потом уже бери маленькие штуки.",
+            "",
+            TextReply(
+                f"- Я всегда говорю: «Первым делом – {big_animal_plur}»",
+                voice=Voice.ZAHAR_GPU,
+            ),
+            "- Народная мудрость. Рассказать, что было дальше?",
+        )
+
+        @api.otherwise
+        async def _():
+            little_animal_plur_adj = await add_random_adjective(
+                self._little_animal, {"nomn", "plur"}
+            )
+
+            little_animal_accs = inflect(self._little_animal, ({"accs"},))
+
+            api.say(
+                "Маша была самой маленькой, но в пословицах не уступала:",
+                f"- Вот моя пословица: «Не впускай кота туда, где живут {little_animal_plur_adj}».",
+                "Вова и Игорь ломали голову над этой загадкой. Маша объяснила, поставив р+уки в б+оки:",
+                "- Это значит, что многие пытаются придумать пословицу про кошку и рыбку, но у меня вот такая уникальная!",
+                "",
+                TextReply(
+                    f"- Однажды я встретил {little_animal_accs}. Еле ноги унёс.",
+                    voice=Voice.ZAHAR_GPU,
+                ),
+                "- Боишься их? Я тоже. Рассказать дальше?",
+                "",
+            )
+
+            @api.otherwise
+            async def _():
+                api.say(
+                    "Наконец, очередь дошла до Игоря. Тот с некоторой гордостью заявил:",
+                    f"- Моя пословица: «Слово - серебро, а молчание - фунт {sweet_gen}!»",
+                    "Маша и Вова спросили, что же она означает на самом деле.",
+                    "Игорь, задумавшись, ответил:",
+                    "- Ну, это когда лучше помолчать и съесть сладкое, чем разговаривать.",
+                    "",
+                    "Все трое рассмеялись и решили, что это самые удачливые пословицы в мире!",
+                    "",
+                    TextReply(
+                        "- Вкусная пословица. Давай тоже немного помолчим?",
+                        voice=Voice.ZAHAR_GPU,
+                    ),
+                    "- Давай. Ам.",
+                    "",
                 )
 
                 await self.goto_next_step()
@@ -196,7 +301,11 @@ def get_dialog(session_id: str) -> Dialog:
     dialog = Dialog(stopwords=["алиса"])
     api = DialogAPI(dialog)
 
-    stories: list[Story] = [AtLessonStory(api), InZooStory(api)]
+    stories: list[Story] = [
+        ProverbsStory(api),
+        InZooStory(api),
+        AtLessonStory(api),
+    ]
 
     @api.otherwise
     def _():

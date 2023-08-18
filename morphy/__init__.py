@@ -3,6 +3,41 @@ from pymorphy2 import MorphAnalyzer as MorphAnalyzerBase  # type: ignore
 from pymorphy2.analyzer import Parse as ParseBase  # type: ignore
 from pymorphy2.tagset import OpencorporaTag as OpencorporaTagBase  # type: ignore
 
+# PARTS_OF_SPEECH
+# ---------------
+# NOUN - имя существительное
+# ADJF - имя прилагательное (полное)
+# ADJS - имя прилагательное (краткое)
+# COMP - компаратив
+# VERB - глагол (личная форма)
+# INFN - глагол (инфинитив)
+# PRTF - причастие (полное)
+# PRTS - причастие (краткое)
+# GRND - деепричастие
+# NUMR - числительное
+# ADVB - наречие
+# NPRO - местоимение-существительное
+# PRED - предикатив
+# PREP - предлог
+# CONJ - союз
+# PRCL - частица
+# INTJ - междометие
+
+# CASES
+# -----
+# nomn - именительный падеж
+# gent - родительный падеж
+# datv - дательный падеж
+# accs - винительный падеж
+# ablt - творительный падеж
+# loct - предложный падеж
+# voct - звательный падеж
+# gen1 - первый родительный падеж
+# gen2 - второй родительный (частичный) падеж
+# acc2 - второй винительный падеж
+# loc1 - первый предложный падеж
+# loc2 - второй предложный (местный) падеж
+
 
 # Type stubs
 # ----------
