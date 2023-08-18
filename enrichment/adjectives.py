@@ -2,15 +2,17 @@
 Предоставляет прилагательные для существительных
 """
 
-from random import choice
+import random
 import httpx
 from async_lru import alru_cache
-from morphy import inflect, parse
+from morphy import inflect2, parse
 
 _client = httpx.AsyncClient()
 
 
-async def add_random_adjective(noun: str, grs: set[str]) -> str:
+async def add_random_adjective(
+    noun: str, case: str | None = None, num: str | None = None
+) -> str:
     """
     Добавляет к существительному случайное прилагательное,
     если сможет его согласовать
@@ -22,17 +24,26 @@ async def add_random_adjective(noun: str, grs: set[str]) -> str:
     if not adjectives:
         return noun
 
-    random_adjective = choice(adjectives)
-    union_grs = {
-        gr for gr in [parsed_noun.tag.gender, parsed_noun.tag.animacy] if gr
-    } | grs
+    num_ = num or parsed_noun.tag.number
+    case_ = case or parsed_noun.tag.case
+    # Пол не имеет значения во множественном сичле
+    gender_ = parsed_noun.tag.gender if num_ != "plur" else None
+    # Одушевленность имеет значение только в мужском роде
+    anim_ = parsed_noun.tag.animacy if case_ == "masc" else None
 
-    case_consistent_adjective = inflect(
-        random_adjective,
-        (union_grs, grs),
-    )
+    random_adjective = random.choice(adjectives)
+    grs = [
+        gr
+        for gr in [
+            num_,
+            gender_,
+            case_,
+            anim_,
+        ]
+        if gr is not None
+    ]
 
-    return f"{case_consistent_adjective} {inflect(noun, (grs, ))}"
+    return f"{inflect2(random_adjective, grs)} {inflect2(noun, grs)}"
 
 
 @alru_cache(1024)

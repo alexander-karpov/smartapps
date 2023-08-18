@@ -89,7 +89,7 @@ def parse(word: str) -> list[Parse]:
     return _morph.parse(word)
 
 
-def inflect(word: str, grs_variants: tuple[set[str], ...]) -> str:
+def inflect_deprecated(word: str, grs_variants: tuple[set[str], ...]) -> str:
     parsed = parse(word)
 
     for grs in grs_variants:
@@ -102,12 +102,28 @@ def inflect(word: str, grs_variants: tuple[set[str], ...]) -> str:
     return word
 
 
+def inflect2(word: str, grs: list[str]) -> str:
+    parsed = parse(word)
+    grs_reduced = grs.copy()
+
+    while grs_reduced:
+        for p in parsed:
+            inflected = p.inflect(set(grs_reduced))
+
+            if inflected:
+                return inflected.word
+
+        grs_reduced.pop()
+
+    return word
+
+
 def to_nomn(word: str) -> str:
     """
     Приводит к именительному падежу
     """
 
-    match inflect(word, ({"nomn"},)):
+    match inflect_deprecated(word, ({"nomn"},)):
         case nomn, _:
             return nomn
         case _:

@@ -13,3 +13,4 @@ yargy
 httpx
 async-lru
 ruwordnet
+pytest

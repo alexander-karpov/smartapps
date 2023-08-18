@@ -1,7 +1,7 @@
 from functools import lru_cache
 from dialoger import Dialog, TextReply, Voice, DialogAPI
 from enrichment import add_random_adjective, random_hypernym
-from morphy import by_gender, inflect
+from morphy import by_gender, inflect_deprecated
 from stories.story import Story, StoryStep
 
 
@@ -121,8 +121,10 @@ class InZooStory(Story):
         ]
 
     def _tell_story(self) -> None:
-        animal_ablt_plur = inflect(self._animal or "носорог", ({"ablt", "plur"},))
-        item_ablt_plur = inflect(self._item, ({"ablt", "plur"},))
+        animal_ablt_plur = inflect_deprecated(
+            self._animal or "носорог", ({"ablt", "plur"},)
+        )
+        item_ablt_plur = inflect_deprecated(self._item, ({"ablt", "plur"},))
 
         self._api.say(
             # "Вспомнила историю.",
@@ -142,9 +144,9 @@ class InZooStory(Story):
 
         @self._api.otherwise
         async def _():
-            item_accs_plur = inflect(self._item, ({"accs", "plur"},))
-            animal_adj = await add_random_adjective(self._animal, {"nomn"})
-            wild_animal_adj = await add_random_adjective(self._wild_animal, {"nomn"})
+            item_accs_plur = inflect_deprecated(self._item, ({"accs", "plur"},))
+            animal_adj = await add_random_adjective(self._animal, "nomn")
+            wild_animal_adj = await add_random_adjective(self._wild_animal, "nomn")
 
             self._api.say(
                 f"Старуха медленно идет в их сторону, осматривая пустующий зоопарк. Подойдя ближе, она глядит на «{item_accs_plur}» и кричит:",
@@ -167,8 +169,8 @@ class InZooStory(Story):
 
             @self._api.otherwise
             async def _():
-                item_nomn_plur = inflect(self._item, ({"nomn", "plur"},))
-                item_adj = await add_random_adjective(self._item, {"nomn"})
+                item_nomn_plur = inflect_deprecated(self._item, ({"nomn", "plur"},))
+                item_adj = await add_random_adjective(self._item, "nomn")
                 common_item = by_gender(self._item, "обычн", "ый", "ая", "ое")
 
                 self._api.say(
@@ -231,10 +233,10 @@ class ProverbsStory(Story):
     async def _tell_story(self):
         api = self._api
 
-        big_animal_accs_plur = inflect(self._big_animal, ({"accs", "plur"},))
-        big_animal_plur = inflect(self._big_animal, ({"nomn", "plur"},))
+        big_animal_accs_plur = inflect_deprecated(self._big_animal, ({"accs", "plur"},))
+        big_animal_plur = inflect_deprecated(self._big_animal, ({"nomn", "plur"},))
 
-        sweet_gen = inflect(self._sweet, ({"gent"},))
+        sweet_gen = inflect_deprecated(self._sweet, ({"gent"},))
 
         api.say(
             "Однажды три маленьких друга, Вова, Маша и Игорь, решили устроить соревнование, кто лучше всего знает пословицы. Вова первым начал:",
@@ -252,10 +254,10 @@ class ProverbsStory(Story):
         @api.otherwise
         async def _():
             little_animal_plur_adj = await add_random_adjective(
-                self._little_animal, {"nomn", "plur"}
+                self._little_animal, "nomn", "plur"
             )
 
-            little_animal_accs = inflect(self._little_animal, ({"accs"},))
+            little_animal_accs = inflect_deprecated(self._little_animal, ({"accs"},))
 
             api.say(
                 "Маша была самой маленькой, но в пословицах не уступала:",

@@ -60,6 +60,11 @@ def random_hypernym(word: str) -> str | None:
         return None
 
     sense = choice(senses)
-    hypernym = choice(sense.synset.hypernyms)
+    hypernyms = sense.synset.hypernyms
+
+    if not hypernyms:
+        return None
+
+    hypernym = choice(hypernyms)
 
     return hypernym.title.lower()
