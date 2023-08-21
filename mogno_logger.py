@@ -5,19 +5,20 @@ import math
 
 class MognoLogger:
     _db: Database
-    _app_name: str
 
-    def __init__(self, db: Database, app_name: str) -> None:
+    def __init__(self, db: Database) -> None:
         self._db = db
-        self._app_name = app_name
 
-    def log(self, request: dict, response: dict) -> None:
+    def log(self, request: dict, response: dict, app_name: str) -> None:
+        """
+        Сохраняет запрос и ответ в нашу могну
+        """
         if "ping" in request["request"]["command"]:
             return
 
         self._db["repka_logs"].insert_one(
             {
-                "app": self._app_name,
+                "app": app_name,
                 "request": request["request"]["original_utterance"],
                 "message_id": request["session"]["message_id"],
                 "session_id": request["session"]["session_id"],

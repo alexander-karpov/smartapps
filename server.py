@@ -1,27 +1,34 @@
+"""
+Сервер для Диалогов Алисы
+"""
 import asyncio
 import json
 from typing import Literal
 from db import db
 from mogno_logger import MognoLogger
+from hagi import get_dialog as get_cat_dialog
+from stories import get_dialog as get_stories_dialog
 
-logger = MognoLogger(db, "hagi2")
+logger = MognoLogger(db)
+
+DialogName = Literal["stories"] | Literal["cat"]
 
 
 async def app(scope, receive, send):
+    """
+    Точка входа сервера Диалогов
+    """
     assert scope["type"] == "http"
     assert scope["method"] == "POST"
 
-    request = json.loads(await read_body(receive))
+    request = json.loads(await _read_body(receive))
+    dialog_name = _dialog_name_by_id(request)
 
-    match detect_app(request):
-        case "hagi":
-            from hagi import get_dialog
-
-            dialog = get_dialog(request["session"]["session_id"])
+    match dialog_name:
+        case "cat":
+            dialog = get_cat_dialog(request["session"]["session_id"])
         case "stories":
-            from stories import get_dialog
-
-            dialog = get_dialog(request["session"]["session_id"])
+            dialog = get_stories_dialog(request["session"]["session_id"])
 
     assert dialog, "Хоть один диалог выбран"
 
@@ -47,10 +54,10 @@ async def app(scope, receive, send):
     await asyncio.sleep(0.001)
 
     dialog.after_response()
-    logger.log(request, response)
+    logger.log(request, response, dialog_name)
 
 
-async def read_body(receive):
+async def _read_body(receive):
     """
     Read and return the entire body from an incoming ASGI message.
     """
@@ -65,8 +72,8 @@ async def read_body(receive):
     return body
 
 
-def detect_app(request) -> Literal["stories"] | Literal["hagi"]:
+def _dialog_name_by_id(request) -> DialogName:
     if request["session"]["skill_id"] == "2f2e926e-66c8-4f66-b628-18255c83e588":
         return "stories"
 
-    return "hagi"
+    return "cat"
