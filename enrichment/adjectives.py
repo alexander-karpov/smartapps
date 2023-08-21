@@ -5,7 +5,7 @@
 import random
 import httpx
 from async_lru import alru_cache
-from morphy import inflect2, parse
+from morphy import inflect, parse
 
 _client = httpx.AsyncClient()
 
@@ -43,7 +43,7 @@ async def add_random_adjective(
         if gr is not None
     ]
 
-    return f"{inflect2(random_adjective, grs)} {inflect2(noun, grs)}"
+    return f"{inflect(random_adjective, grs)} {inflect(noun, grs)}"
 
 
 @alru_cache(1024)

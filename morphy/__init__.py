@@ -102,7 +102,7 @@ def inflect_deprecated(word: str, grs_variants: tuple[set[str], ...]) -> str:
     return word
 
 
-def inflect2(word: str, grs: list[str]) -> str:
+def inflect(word: str, grs: list[str]) -> str:
     parsed = parse(word)
     grs_reduced = grs.copy()
 
