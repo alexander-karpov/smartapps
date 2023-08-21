@@ -178,7 +178,8 @@ class Dialog:
         for h in self._handlers:
             h.time_to_live -= 1
 
-        self._handlers = [h for h in self._handlers if h.time_to_live == 0]
+        # У обработчиков на текущем цикле ttl = 1, после вычетания станет 0
+        self._handlers = [h for h in self._handlers if h.time_to_live >= 0]
 
     def _warmup_sim_index(self):
         """
