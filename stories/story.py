@@ -19,26 +19,20 @@ class Story(ABC):
     _steps: list[StoryStep]
     _api: DialogAPI
 
-    def __init__(self, api: DialogAPI) -> None:
+    def __init__(self, api: DialogAPI, last_step: StoryStep) -> None:
         self._api = api
-        self._steps = []
+
+        self._steps = self.create_story_steps()
+        self._steps.append(last_step)
 
     @abstractmethod
     def create_story_steps(self) -> list[StoryStep]:
         """
         Формирует список шагов истории
         """
+        ...
 
-    async def start(self, last_step: StoryStep) -> None:
-        """
-        Создаёт список шагов истории и начинает двигаться по ним
-        """
-        self._steps = self.create_story_steps()
-        self._steps.append(last_step)
-
-        await self._call_current_step()
-
-    async def _call_current_step(self):
+    async def call_current_step(self):
         """
         (Повторно) заходит в текущий (пройденный) шаг истории
         """
@@ -83,7 +77,7 @@ class Story(ABC):
                         or "Я услышала что-то не то. Повтори, пожалуйста.",
                     )
 
-                    await self._call_current_step()
+                    await self.call_current_step()
 
         return step
 

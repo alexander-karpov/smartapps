@@ -36,7 +36,7 @@ class InZooStory(Story):
                 lambda i: setattr(self, "_animal", i.subject[0]),
             ),
             self.make_entity_step(
-                "Теперь назови какое-нибудь животное с острыми зубами.",
+                "Назови какое-нибудь животное с острыми зубами.",
                 lambda i: setattr(self, "_wild_animal", i.subject[0]),
             ),
             self.make_entity_step(

@@ -57,10 +57,7 @@ class DialogAPI:
 
         return decorator
 
-    def trigger(
-        self,
-        trigger: Callable[[Input], T | None],
-    ):
+    def trigger(self, trigger: Callable[[Input], T | None], time_to_live=1):
         """
         Обработчик запроса по условию. Проверяются первыми
         """
@@ -70,7 +67,7 @@ class DialogAPI:
                 TriggerHandler(
                     trigger=trigger,
                     action=action,
-                    time_to_live=1,
+                    time_to_live=time_to_live,
                 )
             )
 
@@ -103,6 +100,22 @@ class DialogAPI:
         )
 
         return action
+
+    def help(self, action: Callable[[], Coroutine[Any, Any, None] | None]):
+        """
+        Добавляет обработчик команды Помощь
+        """
+        return self.trigger(lambda i: i.utterance == "помощь", time_to_live=100500)(
+            lambda _: action()
+        )
+
+    def what_can_you_do(self, action: Callable[[], Coroutine[Any, Any, None] | None]):
+        """
+        Добавляет обработчик команды Что ты умеешь
+        """
+        return self.trigger(
+            lambda i: i.utterance == "что ты умеешь", time_to_live=100500
+        )(lambda _: action())
 
     def say(self, *replies: Reply | str | tuple[str, str]):
         """

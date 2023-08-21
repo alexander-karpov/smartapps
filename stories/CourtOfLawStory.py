@@ -79,7 +79,7 @@ class CourtOfLawStory(Story):
                     "- Вот так Вовочка. Приговорил сестку родную.",
                     voice=Voice.ZAHAR_GPU,
                 ),
-                "- Да. Подумаешь, бабушку с {food_ablt} перепутала.",
+                f"- Да. Подумаешь, бабушку с {food_ablt} перепутала.",
             )
 
             await self.goto_next_step()

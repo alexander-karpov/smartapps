@@ -15,12 +15,48 @@ def get_dialog(session_id: str) -> Dialog:
     dialog = Dialog(stopwords=["алиса"])
     api = DialogAPI(dialog)
 
+    async def end_current_story():
+        stories.pop(0)
+
+        api.say("Вот такая история.")
+
+        if stories:
+            api.say("Хочешь послушать ещё одну?")
+
+            api.otherwise(start_next_story)
+        else:
+            api.say(TextReply("Тут и сказки конец. А кто слушал – молодец", end=True))
+
     stories: list[Story] = [
-        InZooStory(api),
-        CourtOfLawStory(api),
-        ProverbsStory(api),
-        AtLessonStory(api),
+        InZooStory(api, end_current_story),
+        CourtOfLawStory(api, end_current_story),
+        ProverbsStory(api, end_current_story),
+        AtLessonStory(api, end_current_story),
     ]
+
+    @api.what_can_you_do
+    async def _():
+        api.say(
+            "Эта игра называется «Самые смешные истории»",
+            "В ней мы вместе сочиним много всего интересного.",
+            "Для этого я буду задавать вопросы, а твои ответы добавлю в нужные места в тексте и прочитаю историю, которая у нас получится.",
+        )
+
+        if stories:
+            api.say("Теперь давай играть.")
+
+            await stories[0].call_current_step()
+
+    @api.help
+    async def _():
+        api.say(
+            "Чтобы играть, тебе нужно слушать мои вопросы и отвечать на них. Чтобы закончить игру, скажи «Хватит».",
+        )
+
+        if stories:
+            api.say("Теперь давай играть.")
+
+            await stories[0].call_current_step()
 
     @api.otherwise
     def _():
@@ -32,31 +68,19 @@ def get_dialog(session_id: str) -> Dialog:
 
         # 🔥 button дальше
 
-        async def end_current_story():
-            api.say("Вот такая история.")
-
-            if stories:
-                api.say("Хочешь послушать ещё одну?")
-
-                api.otherwise(start_next_story)
-            else:
-                api.say(
-                    TextReply("Тут и сказки конец. А кто слушал – молодец", end=True)
-                )
-
-        async def start_next_story():
-            story = stories.pop(0)
-
-            if story:
-                await story.start(end_current_story)
-            else:
-                api.say(
-                    TextReply(
-                        "Ой! Кажется, у меня молоко убежало! Мне пора. Пока, бавый",
-                        end=True,
-                    )
-                )
-
         api.otherwise(start_next_story)
+
+    async def start_next_story():
+        story = stories[0]
+
+        if story:
+            await story.call_current_step()
+        else:
+            api.say(
+                TextReply(
+                    "Ой! Кажется, у меня молоко убежало! Мне пора. Пока, бавый",
+                    end=True,
+                )
+            )
 
     return dialog
