@@ -89,19 +89,6 @@ def parse(word: str) -> list[Parse]:
     return _morph.parse(word)
 
 
-def inflect_deprecated(word: str, grs_variants: tuple[set[str], ...]) -> str:
-    parsed = parse(word)
-
-    for grs in grs_variants:
-        for p in parsed:
-            inflected = p.inflect(grs)
-
-            if inflected:
-                return inflected.word
-
-    return word
-
-
 def inflect(word: str, grs: list[str]) -> str:
     parsed = parse(word)
     grs_reduced = grs.copy()
@@ -116,18 +103,6 @@ def inflect(word: str, grs: list[str]) -> str:
         grs_reduced.pop()
 
     return word
-
-
-def to_nomn(word: str) -> str:
-    """
-    Приводит к именительному падежу
-    """
-
-    match inflect_deprecated(word, ({"nomn"},)):
-        case nomn, _:
-            return nomn
-        case _:
-            return word
 
 
 def get_tag(word: str) -> OpencorporaTag:

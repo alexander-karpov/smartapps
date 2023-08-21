@@ -1,6 +1,6 @@
 from dialoger import TextReply, Voice
 from enrichment import add_random_adjective
-from morphy import inflect_deprecated
+from morphy import inflect
 from stories.story import Story, StoryStep
 
 
@@ -46,7 +46,7 @@ class ProverbsStory(Story):
     async def _tell_story(self):
         api = self._api
 
-        big_animal_accs_plur = inflect_deprecated(self._big_animal, ({"accs", "plur"},))
+        big_animal_accs_plur = inflect(self._big_animal, ["accs", "plur"])
 
         api.say(
             "Однажды три маленьких друга, Вова, Маша и Игорь, решили устроить соревнование, кто лучше всего знает пословицы. Вова первым начал:",
@@ -67,7 +67,7 @@ class ProverbsStory(Story):
                 self._little_animal, "nomn", "plur"
             )
 
-            little_animal_accs = inflect_deprecated(self._little_animal, ({"accs"},))
+            little_animal_accs = inflect(self._little_animal, ["accs"])
 
             api.say(
                 "Маша была самой маленькой, но в пословицах не уступала. Она говорит:",

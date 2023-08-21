@@ -1,6 +1,6 @@
 from dialoger import TextReply, Voice
 from enrichment import add_random_adjective
-from morphy import by_gender, inflect_deprecated
+from morphy import by_gender, inflect
 from stories.story import Story, StoryStep
 
 
@@ -47,10 +47,8 @@ class InZooStory(Story):
         ]
 
     def _tell_story(self) -> None:
-        animal_ablt_plur = inflect_deprecated(
-            self._animal or "носорог", ({"ablt", "plur"},)
-        )
-        item_ablt_plur = inflect_deprecated(self._item, ({"ablt", "plur"},))
+        animal_ablt_plur = inflect(self._animal, ["ablt", "plur"])
+        item_ablt_plur = inflect(self._item, ["ablt", "plur"])
 
         self._api.say(
             # "Вспомнила историю.",
@@ -70,7 +68,7 @@ class InZooStory(Story):
 
         @self._api.otherwise
         async def _():
-            item_accs_plur = inflect_deprecated(self._item, ({"accs", "plur"},))
+            item_accs_plur = inflect(self._item, ["accs", "plur"])
             animal_adj = await add_random_adjective(self._animal, "nomn")
             wild_animal_adj = await add_random_adjective(self._wild_animal, "nomn")
 
@@ -95,7 +93,7 @@ class InZooStory(Story):
 
             @self._api.otherwise
             async def _():
-                item_nomn_plur = inflect_deprecated(self._item, ({"nomn", "plur"},))
+                item_nomn_plur = inflect(self._item, ["nomn", "plur"])
                 item_adj = await add_random_adjective(self._item, "nomn")
                 common_item = by_gender(self._item, "обычн", "ый", "ая", "ое")
 

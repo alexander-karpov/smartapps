@@ -1,5 +1,5 @@
 from dialoger import Dialog
-from morphy import inflect_deprecated
+from morphy import inflect
 from hagi.nlp import nlp
 from hagi.hagi_names import hagi_names
 
@@ -44,7 +44,7 @@ class Verb(Word):
         if not len(tags):
             return self._token.text
 
-        inflected, _ = inflect_deprecated(self._token.text, (frozenset(tags),))
+        inflected, _ = inflect(self._token.text, list(tags))
 
         return inflected
 
