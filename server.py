@@ -76,4 +76,4 @@ def _dialog_name_by_id(request) -> DialogName:
     if request["session"]["skill_id"] == "2f2e926e-66c8-4f66-b628-18255c83e588":
         return "stories"
 
-    return "cat"
+    return "stories"
