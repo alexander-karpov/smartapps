@@ -38,6 +38,9 @@ class AtLessonStory(Story):
         i = self._api.input()
         name = i.first_name or i.last_name
 
+        if not name and i.entities():
+            name = i.entities()[0].subject[0]
+
         if name:
             self._name = name
 
