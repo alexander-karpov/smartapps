@@ -1,6 +1,7 @@
+import math
 from pymongo.database import Database
 import time
-import math
+from util import safeget
 
 
 class MognoLogger:
@@ -24,7 +25,7 @@ class MognoLogger:
                 "session_id": request["session"]["session_id"],
                 "response": response["response"]["text"][:64],
                 "time": math.ceil(time.time() * 1000),
-                "screen": request["meta"]["interfaces"]["screen"] is not None,
+                "screen": safeget(request, "meta", "interfaces", "screen") is not None,
                 "version": 4,
             }
         )
