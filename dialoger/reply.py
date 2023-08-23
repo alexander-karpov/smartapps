@@ -20,7 +20,7 @@ class TextReply(Reply):
         self,
         *parts: str | tuple[str, str],
         end: bool = False,
-        voice: Voice = Voice.SHITOVA_GPU,
+        voice: Voice | None = None,
     ) -> None:
         self._text = []
         self._tts = []

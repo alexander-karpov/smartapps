@@ -1,7 +1,9 @@
-from dialoger import Dialog
+from dialoger import DialogAPI, Voice, TextReply
 from morphy import inflect
-from hagi.nlp import nlp
-from hagi.hagi_names import hagi_names
+from cat.nlp import nlp
+
+
+_stopwords: list[str] = []
 
 
 class Word:
@@ -44,7 +46,7 @@ class Verb(Word):
         if not len(tags):
             return self._token.text
 
-        inflected, _ = inflect(self._token.text, list(tags))
+        inflected = inflect(self._token.text, list(tags))
 
         return inflected
 
@@ -62,7 +64,6 @@ class Pronoun(Word):
         "мой": "твой",
         "моего": "твоего",
         "моему": "твоему",
-        "моим": "твоим",
         "моём": "твоём",
         "моем": "твоем",
         "моя": "твоя",
@@ -107,21 +108,17 @@ class Determiner(Pronoun):
     pass
 
 
-def append_chitchat(dialog: Dialog) -> None:
-    on, say, input = dialog.append_handler, dialog.append_reply, dialog.input
-
-    @on()
+def append_chitchat(api: DialogAPI) -> None:
+    @api.otherwise_always
     def _():
         words = (
             Word.create(word)
-            for sent in nlp(input().utterance).sentences
+            for sent in nlp(api.input().utterance).sentences
             for word in sent.words
         )
         changed = [w.person_changed_text() for w in words]
 
-        """
-        Меняем союз с -> со когда нужно
-        """
+        # Меняем союз с -> со когда нужно
         for i in range(len(changed) - 1):
             if changed[i] == "с" and changed[i + 1] == "мной":
                 changed[i] = "со"
@@ -132,7 +129,7 @@ def append_chitchat(dialog: Dialog) -> None:
         if changed and changed[0] == "а":
             changed.pop(0)
 
-        without_hagi_name = [word for word in changed if word not in hagi_names]
+        without_hagi_name = [word for word in changed if word not in _stopwords]
         joined = " ".join(without_hagi_name or changed) + "."
 
-        say(joined)
+        api.say(TextReply(joined, "Правда?"))

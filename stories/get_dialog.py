@@ -12,7 +12,7 @@ def get_dialog(session_id: str) -> Dialog:
     """
     Создаёт новый диалог «Самые смешные истории»
     """
-    dialog = Dialog(stopwords=["алиса"])
+    dialog = Dialog(intents_stopwords=["алиса"])
     api = DialogAPI(dialog)
 
     async def end_current_story():

@@ -12,7 +12,7 @@ class ResponseBuilder:
     _images: list[str]
     _card_image: str | None = None
     _end_session: bool = False
-    _current_voice: Voice = Voice.SHITOVA_GPU
+    _current_voice: Voice | None = None
 
     def __init__(self) -> None:
         self._text = []

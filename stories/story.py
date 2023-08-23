@@ -48,7 +48,7 @@ class Story(ABC):
         self._steps.pop(0)
         maybe_coroutine = self._steps[0]()
 
-        if iscoroutine(maybe_coroutine):
+        if maybe_coroutine and iscoroutine(maybe_coroutine):
             await maybe_coroutine
 
     def make_step(

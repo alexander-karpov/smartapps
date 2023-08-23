@@ -9,6 +9,7 @@ from dialoger.reply import Reply, TextReply
 from dialoger.input import Input
 from dialoger.response_builder import DialogResponse, ResponseBuilder
 from dialoger.similarity_index import SimilarityIndex, similarity_index
+from dialoger.voice import Voice
 
 
 DialogRequest = dict[Any, Any]
@@ -19,13 +20,22 @@ class Dialog:
     _handlers: list[Handler]
     _replies: list[Reply]
     _input: Input | None
-    _stopwords: frozenset[str]
+    _intents_stopwords: frozenset[str]
+    _default_voice: Voice | None
 
-    def __init__(self, *, stopwords: Iterable[str] = []) -> None:
+    def __init__(
+        self,
+        *,
+        intents_stopwords: Iterable[str] | None = None,
+        default_voice: Voice | None = None,
+    ) -> None:
         self._handlers = []
         self._sim_index = similarity_index
         self._replies = []
-        self._stopwords = frozenset(stopwords)
+        self._default_voice = default_voice
+        self._intents_stopwords = (
+            frozenset(intents_stopwords) if intents_stopwords else frozenset()
+        )
 
     # Dialog API
     # ---------------
@@ -68,18 +78,21 @@ class Dialog:
     # --------------
 
     def _replies_to_response(self, response_builder: ResponseBuilder):
+        if self._default_voice:
+            response_builder.set_voice(self._default_voice)
+
         for reply in self._replies:
             reply.append_to(response_builder)
 
-    async def _generate_response(self, input: Input) -> None:
+    async def _generate_response(self, input_: Input) -> None:
         """
         Выбор и выполнение хендлера
         """
-        self._input = input
+        self._input = input_
 
         _ = (
-            await self._handle_by_triggers(input)
-            or await self._handle_by_intents(input)
+            await self._handle_by_triggers(input_)
+            or await self._handle_by_intents(input_)
             or await self._handle_by_otherwise()
         )
 
@@ -90,11 +103,11 @@ class Dialog:
                 TextReply("Я тебя плохо слышу. Подойти поближе и повтори.")
             )
 
-    async def _handle_by_triggers(self, input: Input) -> bool:
+    async def _handle_by_triggers(self, input_: Input) -> bool:
         for h in reversed(self._handlers):
             match h:
                 case TriggerHandler(_, action, trigger):
-                    result = trigger(input)
+                    result = trigger(input_)
 
                     if result:
                         maybe_coroutine = action(result)
@@ -108,11 +121,11 @@ class Dialog:
 
         return False
 
-    async def _handle_by_intents(self, input: Input) -> bool:
+    async def _handle_by_intents(self, input_: Input) -> bool:
         intent_handlers = [h for h in self._handlers if isinstance(h, IntentHandler)]
 
         input_without_stopwords = " ".join(
-            t for t in input.tokens if t not in self._stopwords
+            t for t in input_.tokens if t not in self._intents_stopwords
         )
 
         if not intent_handlers or not input_without_stopwords:

@@ -88,6 +88,19 @@ class DialogAPI:
 
         return action
 
+    def otherwise_always(self, action: Action):
+        """
+        Обработчик всех запросов, если они ещё не были обработаны
+        """
+        self._dialog.append_handler(
+            OtherwiseHandler(
+                action=action,
+                time_to_live=100500,
+            )
+        )
+
+        return action
+
     def postroll(self, action: Action):
         """
         Постролл иногда добавляется в конце случайного ответа

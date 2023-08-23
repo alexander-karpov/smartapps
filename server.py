@@ -6,7 +6,7 @@ import json
 from typing import Literal
 from db import db
 from mogno_logger import MognoLogger
-from hagi import get_dialog as get_cat_dialog
+from cat import get_dialog as get_cat_dialog
 from stories import get_dialog as get_stories_dialog
 
 logger = MognoLogger(db)
@@ -75,5 +75,7 @@ async def _read_body(receive):
 def _dialog_name_by_id(request) -> DialogName:
     if request["session"]["skill_id"] == "2f2e926e-66c8-4f66-b628-18255c83e588":
         return "stories"
+    if request["session"]["skill_id"] == "c1deda66-ad4c-4795-8b91-2d3e57ff7ca4":
+        return "cat"
 
-    return "stories"
+    return "cat"
