@@ -1,4 +1,5 @@
 from dialoger import TextReply, Voice
+from enrichment.adjectives import add_random_adjective
 from morphy import inflect
 from stories.story import Story, StoryStep
 
@@ -33,7 +34,7 @@ class CourtOfLawStory(Story):
                 lambda i: setattr(self, "_item", i.subject[0]),
             ),
             self.make_entity_step(
-                "Что придаёт сил и подминает настроение?",
+                "Что придаёт сил и поднимает настроение?",
                 lambda i: setattr(self, "_power", i.subject[0]),
             ),
             self._tell_story,
@@ -41,6 +42,7 @@ class CourtOfLawStory(Story):
 
     async def _tell_story(self) -> None:
         food_ablt = inflect(self._food, ["ablt"])
+        food_adj_ablt = add_random_adjective(self._food, "ablt")
         item_ablt = inflect(self._item, ["ablt"])
         power_gent = inflect(self._power, ["gent"])
 
@@ -51,18 +53,18 @@ class CourtOfLawStory(Story):
             "Вовочка соглашается, и они начинают играть. Вовочка спрашивает:",
             "— Машенька, почему ты укусила бабушку за палец?",
             "Маша отвечает:",
-            f"— Я её запутала с {food_ablt}.",
+            f"— Я её перепутала с {food_adj_ablt}.",
             "Вовочка продолжает:",
             "— А почему ты потом упала с кровати?",
             "Маша в ответ:",
-            f" — Хотела стать {item_ablt}!",
+            f" — Я хотела стать {item_ablt}!",
             "",
             TextReply(
                 f"- В детстве я тоже хотел стать {item_ablt}.", voice=Voice.ZAHAR_GPU
             ),
             "- Получилось?",
-            TextReply("- Нет. Упал со стула.", voice=Voice.ZAHAR_GPU),
-            "- Может оно и к лучшему. Рассказать, что было дальше?",
+            TextReply("- Не совсем.", voice=Voice.ZAHAR_GPU),
+            "- А у меня получилось. Рассказать, что было дальше?",
         )
 
         @self._api.otherwise
@@ -71,12 +73,12 @@ class CourtOfLawStory(Story):
                 "Вовочка спрашивает дальше:",
                 " — И почему ты облил+ась слезами и весь день хныкала?",
                 "На это Машенька отвечает:",
-                f"— Я без {power_gent}!",
+                f"— Я сегодня без {power_gent}!",
                 "Вовочка хмурится и произносит строго:",
                 "— Приговор является окончательным - пойдем объясним все папе. Теперь он точно поймет детскую логику!",
                 "",
                 TextReply(
-                    "- Вот так Вовочка. Приговорил сестру родную.",
+                    "- Вот так Вовочка.",
                     voice=Voice.ZAHAR_GPU,
                 ),
                 f"- Да. Подумаешь, бабушку с {food_ablt} перепутала.",
