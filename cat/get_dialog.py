@@ -40,7 +40,7 @@ class CatDialogAPI(DialogAPI):
 
 @lru_cache(maxsize=64)
 def get_dialog(session_id: str) -> Dialog:
-    dialog = Dialog(default_voice=Voice.SASHA_GPU)
+    dialog = Dialog(voice=Voice.SASHA_GPU)
     api = CatDialogAPI(dialog)
 
     @api.otherwise

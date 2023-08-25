@@ -12,12 +12,19 @@ class ResponseBuilder:
     _images: list[str]
     _card_image: str | None = None
     _end_session: bool = False
-    _current_voice: Voice | None = None
 
-    def __init__(self) -> None:
+    # Считаем, что у всех наших диалогов в админке выбран голос Шитовой
+    _current_voice: Voice = Voice.SHITOVA_GPU
+
+    _default_voice: Voice
+
+    def __init__(self, *, default_voice: Voice) -> None:
         self._text = []
         self._tts = []
         self._images = []
+        self._default_voice = default_voice
+
+        self.change_voice(self._default_voice)
 
     def append_text(self, text: str) -> None:
         if not text:
@@ -41,10 +48,13 @@ class ResponseBuilder:
 
         self._tts.append(tts)
 
-    def set_voice(self, voice: Voice) -> None:
+    def change_voice(self, voice: Voice) -> None:
         if voice != self._current_voice:
             self._current_voice = voice
             self._tts.append(f"<speaker voice='{voice.value}'>")
+
+    def reset_voice(self) -> None:
+        self.change_voice(self._default_voice)
 
     def append_silence(self, ms: int = 300) -> None:
         if self._tts:

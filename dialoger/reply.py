@@ -45,7 +45,9 @@ class TextReply(Reply):
             response_builder.append_text(t)
 
         if self._voice is not None:
-            response_builder.set_voice(self._voice)
+            response_builder.change_voice(self._voice)
+        else:
+            response_builder.reset_voice()
 
         response_builder.append_silence(300)
 

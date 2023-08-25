@@ -1,5 +1,5 @@
 from functools import lru_cache
-from dialoger import Dialog, TextReply, DialogAPI
+from dialoger import Dialog, TextReply, DialogAPI, Voice
 from stories.AtLessonStory import AtLessonStory
 from stories.BadBoys import BadBoys
 from stories.CourtOfLawStory import CourtOfLawStory
@@ -13,7 +13,7 @@ def get_dialog(session_id: str) -> Dialog:
     """
     Создаёт новый диалог «Самые смешные истории»
     """
-    dialog = Dialog(intents_stopwords=["алиса"])
+    dialog = Dialog(intents_stopwords=["алиса"], voice=Voice.SHITOVA_GPU)
     api = DialogAPI(dialog)
 
     async def end_current_story():

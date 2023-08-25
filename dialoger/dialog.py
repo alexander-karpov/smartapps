@@ -21,18 +21,18 @@ class Dialog:
     _replies: list[Reply]
     _input: Input | None
     _intents_stopwords: frozenset[str]
-    _default_voice: Voice | None
+    _voice: Voice
 
     def __init__(
         self,
         *,
         intents_stopwords: Iterable[str] | None = None,
-        default_voice: Voice | None = None,
+        voice: Voice,
     ) -> None:
         self._handlers = []
         self._sim_index = similarity_index
         self._replies = []
-        self._default_voice = default_voice
+        self._voice = voice
         self._intents_stopwords = (
             frozenset(intents_stopwords) if intents_stopwords else frozenset()
         )
@@ -55,7 +55,7 @@ class Dialog:
     # ----------
 
     async def handle_request(self, request: DialogRequest) -> DialogResponse:
-        response_builder = ResponseBuilder()
+        response_builder = ResponseBuilder(default_voice=self._voice)
         input = Input(request)
 
         if input.is_ping:
@@ -78,9 +78,6 @@ class Dialog:
     # --------------
 
     def _replies_to_response(self, response_builder: ResponseBuilder):
-        if self._default_voice:
-            response_builder.set_voice(self._default_voice)
-
         for reply in self._replies:
             reply.append_to(response_builder)
 
