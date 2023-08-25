@@ -42,7 +42,7 @@ class CourtOfLawStory(Story):
 
     async def _tell_story(self) -> None:
         food_ablt = inflect(self._food, ["ablt"])
-        food_adj_ablt = add_random_adjective(self._food, "ablt")
+        food_adj_ablt = await add_random_adjective(self._food, "ablt")
         item_ablt = inflect(self._item, ["ablt"])
         power_gent = inflect(self._power, ["gent"])
 
