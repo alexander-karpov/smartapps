@@ -72,7 +72,8 @@ class ProverbsStory(Story):
             )
 
             little_animal_accs = inflect(self._little_animal, ["accs"])
-            sweet_adj = await add_random_adjective(self._little_animal, "nomn")
+            sweet_adj = await add_random_adjective(self._sweet, "nomn")
+            sweet_accs = inflect(self._little_animal, ["accs"])
 
             api.say(
                 "Маша была самой маленькой, но в пословицах не уступала. Она говорит:",
@@ -95,7 +96,7 @@ class ProverbsStory(Story):
                     f"- Моя пословица: «Слово - серебро, а молчание - {sweet_adj}!»",
                     "Маша и Вова спросили, что же она означает на самом деле.",
                     "Игорь, задумавшись, ответил:",
-                    f"- Ну, это когда лучше помолчать и съесть {self._sweet}, чем разговаривать.",
+                    f"- Ну, это когда лучше помолчать и съесть {sweet_accs}, чем разговаривать.",
                     "",
                     "Все трое решили, что это самые удачные пословицы в мире!",
                     "",
