@@ -73,7 +73,7 @@ class ProverbsStory(Story):
 
             little_animal_accs = inflect(self._little_animal, ["accs"])
             sweet_adj = await add_random_adjective(self._sweet, "nomn")
-            sweet_accs = inflect(self._little_animal, ["accs"])
+            sweet_accs = inflect(self._sweet, ["accs"])
 
             api.say(
                 "Маша была самой маленькой, но в пословицах не уступала. Она говорит:",
