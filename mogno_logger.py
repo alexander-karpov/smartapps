@@ -23,7 +23,7 @@ class MognoLogger:
                 "request": request["request"]["original_utterance"],
                 "message_id": request["session"]["message_id"],
                 "session_id": request["session"]["session_id"],
-                "response": response["response"]["text"][:64],
+                "response": response["response"]["text"],
                 "time": math.ceil(time.time() * 1000),
                 "screen": safeget(request, "meta", "interfaces", "screen") is not None,
                 "version": 4,
