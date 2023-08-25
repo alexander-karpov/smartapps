@@ -16,3 +16,6 @@ https://github.com/avidale/python-ruwordnet
 pip install ruwordnet
 !ruwordnet download
 ```
+
+## MongoDB
+Нужно положить пароль от монги в переменную окружения POSTGRESQL_PASSWORD
