@@ -4,7 +4,7 @@ uvicorn \
     --port 8000 \
     --reload \
     --reload-dir ./dialoger \
-    --reload-dir ./hagi \
+    --reload-dir ./cat \
     --reload-dir ./stories \
     --reload-delay 1 \
     --workers 1 \
