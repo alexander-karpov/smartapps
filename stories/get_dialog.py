@@ -19,22 +19,37 @@ def get_dialog(session_id: str) -> Dialog:
     async def end_current_story():
         stories.pop(0)
 
-        api.say("Вот такая история.")
-
         if stories:
+            api.say("Вот такая история.")
             api.say("Хочешь послушать ещё одну?")
 
             api.otherwise(start_next_story)
         else:
-            api.say(TextReply("Тут и сказки конец. А кто слушал – молодец", end=True))
+            api.say("На сегодня это все истории.", "Хочешь послушать их ещё раз?")
 
-    stories: list[Story] = [
-        InZooStory(api, end_current_story),
-        BadBoys(api, end_current_story),
-        CourtOfLawStory(api, end_current_story),
-        ProverbsStory(api, end_current_story),
-        AtLessonStory(api, end_current_story),
-    ]
+            @api.intent(include_yes=True)
+            async def _():
+                stories.extend(get_stories())
+                await start_next_story()
+
+            def _no():
+                api.say(
+                    TextReply("Тут и сказки конец. А кто слушал – молодец", end=True)
+                )
+
+            api.intent(include_no=True)(_no)
+            api.otherwise(_no)
+
+    def get_stories():
+        return [
+            InZooStory(api, end_current_story),
+            BadBoys(api, end_current_story),
+            CourtOfLawStory(api, end_current_story),
+            ProverbsStory(api, end_current_story),
+            AtLessonStory(api, end_current_story),
+        ]
+
+    stories: list[Story] = get_stories()
 
     @api.what_can_you_do
     async def _():
@@ -84,5 +99,14 @@ def get_dialog(session_id: str) -> Dialog:
                     end=True,
                 )
             )
+
+    # Debug API
+    # ---------
+    @api.trigger(lambda i: i.utterance == "last", time_to_live=100500)
+    async def _(_):
+        last = stories.pop()
+        stories.clear()
+        stories.append(last)
+        await start_next_story()
 
     return dialog
