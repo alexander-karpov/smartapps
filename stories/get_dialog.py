@@ -5,6 +5,7 @@ from stories.BadBoysStory import BadBoysStory
 from stories.CourtOfLawStory import CourtOfLawStory
 from stories.InZooStory import InZooStory
 from stories.ProverbsStory import ProverbsStory
+from stories.SpeekingDogStory import SpeekingDogStory
 from stories.story import Story
 
 
@@ -44,6 +45,7 @@ def get_dialog(session_id: str) -> Dialog:
         return [
             InZooStory(api, end_current_story),
             BadBoysStory(api, end_current_story),
+            SpeekingDogStory(api, end_current_story),
             CourtOfLawStory(api, end_current_story),
             ProverbsStory(api, end_current_story),
             AtLessonStory(api, end_current_story),
@@ -107,6 +109,11 @@ def get_dialog(session_id: str) -> Dialog:
         last = stories.pop()
         stories.clear()
         stories.append(last)
+        await start_next_story()
+
+    @api.trigger(lambda i: i.utterance == "next", time_to_live=100500)
+    async def _(_):
+        stories.pop(0)
         await start_next_story()
 
     return dialog

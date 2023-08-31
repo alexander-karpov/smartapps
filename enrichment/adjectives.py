@@ -29,7 +29,7 @@ async def add_random_adjective(
     # Пол не имеет значения во множественном сичле
     gender_ = parsed_noun.tag.gender if num_ != "plur" else None
     # Одушевленность имеет значение только в мужском роде
-    anim_ = parsed_noun.tag.animacy if case_ == "masc" else None
+    anim_ = parsed_noun.tag.animacy if parsed_noun.tag.gender == "masc" else None
 
     random_adjective = random.choice(adjectives)
     grs = [
