@@ -23,7 +23,7 @@ from morphy import inflect
 from stories.story import Story, StoryStep
 
 
-class BadBoys(Story):
+class BadBoysStory(Story):
     """
     История про вредных мальчишек
     """

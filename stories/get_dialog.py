@@ -1,7 +1,7 @@
 from functools import lru_cache
 from dialoger import Dialog, TextReply, DialogAPI, Voice
 from stories.AtLessonStory import AtLessonStory
-from stories.BadBoys import BadBoys
+from stories.BadBoysStory import BadBoysStory
 from stories.CourtOfLawStory import CourtOfLawStory
 from stories.InZooStory import InZooStory
 from stories.ProverbsStory import ProverbsStory
@@ -43,7 +43,7 @@ def get_dialog(session_id: str) -> Dialog:
     def get_stories():
         return [
             InZooStory(api, end_current_story),
-            BadBoys(api, end_current_story),
+            BadBoysStory(api, end_current_story),
             CourtOfLawStory(api, end_current_story),
             ProverbsStory(api, end_current_story),
             AtLessonStory(api, end_current_story),
